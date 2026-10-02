@@ -6,6 +6,19 @@ import ZIPFoundation
 
 @MainActor
 struct OptionalModuleTests {
+    @Test func onboardingWaitsForItsExistingWindowToHostSettings() {
+        let suite = "LiveLearn.testing.onboarding-host.\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let presentation = UnifiedSettingsPresentation()
+        var newWindowRequests = 0
+        presentation.configure(settings: AppSettings(defaults: defaults)) { newWindowRequests += 1 }
+        presentation.open(waitForHost: true)
+        #expect(presentation.isPresented)
+        #expect(newWindowRequests == 0)
+        presentation.dismiss()
+    }
+
     @Test(.enabled(if: ProcessInfo.processInfo.environment["LIVELEARN_VERIFY_RELEASE"] == "1"))
     func releaseArchivesMatchSignedCatalog() throws {
         let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

@@ -25,13 +25,13 @@ final class UnifiedSettingsPresentation {
         if isPresented { bringHostForward() }
     }
 
-    func open() {
+    func open(waitForHost: Bool = false) {
         if !isPresented {
             previousResponder = window?.firstResponder
             window?.makeFirstResponder(nil)
         }
         isPresented = true
-        bringHostForward()
+        if !waitForHost || window != nil { bringHostForward() }
     }
 
     func dismiss() {

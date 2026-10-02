@@ -164,7 +164,7 @@ struct OnboardingView: View {
         model.settings.onboardingCompleted = true
         if installSelected && !selected.isEmpty {
             model.settings.requestedSettingsTab = .modules
-            UnifiedSettingsPresentation.shared.open()
+            UnifiedSettingsPresentation.shared.open(waitForHost: true)
         }
     }
 }
