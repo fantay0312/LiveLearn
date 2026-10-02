@@ -105,7 +105,7 @@ python3 script/package_modules.py --version 0.1.0 --tag modules-v1
 
 文字翻译构建还需要 Python 3，使用仓库中固定版本的 Easydict 源码和依赖；语音运行时需要 `pkg-config`、Opus 和 macOS 26 SDK；浏览器扩展使用其 `package.json` 声明的 Node.js / pnpm 版本与锁文件。默认核心构建不会调用这些步骤。
 
-`package_modules.py` 输出模块压缩包与未签名目录。发布者使用 `script/module_signing.swift` 和保存在仓库之外的私钥签名目录；自建发行版需使用自己的公钥和下载地址。**私钥不应进入 Git。** 目录签名用于验证模块来源，不能替代 Apple 的 Developer ID 签名或公证。
+`package_modules.py` 输出模块压缩包与未签名目录。发布者使用 `script/module_signing.swift` 和保存在仓库之外的私钥签名目录；自建发行版需使用自己的公钥和下载地址，并同步修改 `ModuleInstaller.repository` 的仓库标识。**私钥不应进入 Git。** 目录签名用于验证模块来源，不能替代 Apple 的 Developer ID 签名或公证。
 
 ## 项目结构
 

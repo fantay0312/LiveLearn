@@ -28,6 +28,11 @@ struct OptionalModuleTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("LiveLearn-network-\(UUID())")
         defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
         let library = ModuleLibrary(defaults: defaults, root: root)
+        library.install(.browserExtension)
+        library.cancel(.browserExtension)
+        while library.activity[.browserExtension] != nil { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(!library.isEnabled(.browserExtension))
+        #expect(library.installed.isEmpty)
         for module in OptionalModule.allCases {
             library.install(module)
             while library.activity[module] != nil { try await Task.sleep(for: .milliseconds(100)) }
