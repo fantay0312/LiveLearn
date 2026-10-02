@@ -1,0 +1,1722 @@
+name: LiveLearn
+extName: LiveLearn
+extDescription: LiveLearn is an open source browser extension designed to help you learn languages deeply from any website.
+uninstallSurveyUrl: https://tally.so/r/nPK6Ob
+account:
+  login: Log in
+  webApp: Web app
+  logout: Log out
+  logoutError: Failed to log out. Please try again.
+dataTypes:
+  string: Text
+  number: Number
+contextMenu:
+  translate: Translate
+  translateSelection: Translate "%s"
+  readAloudSelection: Read aloud "%s"
+  showOriginal: Show Original
+sidePanel:
+  firefoxUserActionHint: In Firefox, open LiveLearn from the browser sidebar.
+  firefoxUserActionHelpText: Learn how to open the Firefox sidebar
+  firefoxUserActionHelpUrl: https://support.mozilla.org/en-US/kb/use-sidebar-access-tools-and-vertical-tabs
+popup:
+  theme: Theme
+  autoLang: Auto
+  sourceLang: Source
+  targetLang: Target
+  providers:
+    title: Providers
+    description: Choose which provider to use for each feature
+    open: Open provider settings
+  translate: Translate
+  showOriginal: Show Original
+  enabledFloatingButton: Enable floating button
+  enabledSelectionToolbar: Enable selection toolbar
+  alwaysTranslate: Always translate this site
+  addToWhitelist: Enable extension on this site
+  addToBlacklist: Disable extension on this site
+  options: Options
+  hover: Hover
+  translateParagraph: to translate paragraph
+  translationModeToggle:
+    tooltip:
+      bilingual:
+        current: Currently bilingual
+        action: Click to switch to translation only
+      translationOnly:
+        current: Currently translation only
+        action: Click to switch to bilingual
+  hub:
+    tooltip: Translate text with multiple models simultaneously
+  discord:
+    tooltip: Join Discord to connect with developers and get early access to new features
+  blog:
+    notification: What's new in LiveLearn
+  aiSmartContext: AI Smart Context
+  aiSmartContextDescription: Uses webpage context to improve translation quality. Requires LLM translation provider.
+  more:
+    title: More
+    help: Help
+    tutorial: Tutorial
+    emailUs: Email us
+    featureRequest: Feature request
+    bugReport: Report a bug
+    community: Community
+    joinDiscord: Join Discord
+    joinWechat: Join WeChat Group
+    starGithub: Star on Github
+    rateUs: Rate Us
+errorRecovery:
+  title: Something went wrong
+  description: Recovery mode is active. You can export your current settings as a backup, then reset settings and try again.
+  backupTitle: Backup current settings first (recommended)
+  exportWithApiKeys: Export with API Keys
+  exportWithoutApiKeys: Export without API Keys
+  recoveryTitle: Recovery options
+  refreshPage: Refresh the page
+  resetAction: Reset to default settings
+  resetSuccess: Recovery completed. Settings have been reset
+  resetFailed: Recovery failed. Unable to reset settings
+  errorDetails: Error details
+  resetDialog:
+    title: Reset settings?
+    description: This will replace your current settings with the default values.
+    confirm: Reset
+    cancel: Cancel
+options:
+  autosave:
+    invalid: Please correct the highlighted fields before leaving.
+    failed: Your changes could not be saved. They are still available here.
+    deleted: This item was deleted elsewhere. Your unsaved edits have been kept.
+    retry: Retry
+    leaveTitle: Changes have not been saved
+    leaveDescription: Continue editing to fix the problem, or discard the changes that have not been saved.
+    keepEditing: Continue editing
+    discard: Discard unsaved changes
+  batchSavings:
+    savedCost: Saved approx. $1% on API costs
+  commandPalette:
+    placeholder: Search settings...
+    noResults: No settings found
+    open: Search settings
+  sidebar:
+    toggle: Toggle sidebar
+    settings: Settings
+    features: Features
+    translation: Translation
+    product: Product
+  tools:
+    translationHub: Translation Hub
+  product:
+    roadmap: Roadmap
+  helpAndCommunity:
+    title: Help & Community
+    pageDescription: Learn how to use LiveLearn, get help from the team, or join other users in the community.
+    help:
+      title: Help
+    tutorial:
+      title: Tutorial
+      description: Read the docs and learn how to use LiveLearn
+    email:
+      title: Email us
+      description: Reach the team directly at contact@readfrog.app
+    featureRequest:
+      title: Feature request
+      description: Suggest an idea and vote on what the team builds next
+    bugReport:
+      title: Report a bug
+      description: Open a support ticket and follow it until it is fixed
+    community:
+      title: Community
+    discord:
+      title: Discord
+      description: Chat with the team and other users in real time
+    wechat:
+      title: WeChat group
+      description: Scan the QR code to join the WeChat discussion group
+      qrCodeAlt: WeChat QR code
+  apiProviders:
+    title: API Providers
+    pageDescription: Connect the AI services LiveLearn calls, then choose which one runs each feature.
+    description: Add the providers LiveLearn can call. Over 20 are built in, with custom support for Chat Completions-compatible and Open Responses APIs.
+    configTitle: Provider config
+    addProvider: Add provider
+    builtInProvider: Built-in provider
+    builtInAiUsage:
+      title: Built-in AI quota
+      remaining: "$1% left"
+      supportedFeatures: "Supports $1 features"
+      resetsAt: "Resets at $1"
+      daily: Daily quota
+      weekly: Weekly quota
+      features:
+        pageTranslation: Page translation
+        customAction: Custom AI Actions
+        noteSuggestion: Note suggestions
+        selectionTranslation: Selection translation
+        videoSubtitles: Video subtitles
+        inputTranslation: Input translation
+        languageDetection: Language detection
+    sponsorCta: Get fast, cost-effective AI
+    sponsorCtaJalapenoCloud: Get 50% Off GLM 5.2
+    setApiKeyWarning:
+      message: Please set your API key on the $1 page
+    badges:
+      featureCount: $1 features
+      sponsor: Sponsor
+      sponsorJalapenoCloud: $$2 Free
+    dialog:
+      title: Add new provider
+      groups:
+        builtInProviders:
+          title: Built-in LLM providers
+          description: Built-in large language model providers, no need to fill in most configurations like Base URL
+        compatibleProviders:
+          title: Compatible API providers
+          description: Use Custom Chat Complete for Chat Completions-compatible APIs, or Custom Responses for Open Responses APIs.
+        pureTranslationProviders:
+          title: Pure translation providers
+          description: Providers focused on translation features without large language model capabilities
+    form:
+      fields:
+        name: Name
+        description: Description
+        apiKey: API key
+        baseURL: Base URL
+        url: URL
+        optional: Optional
+      duplicate: Duplicate
+      delete: Delete
+      deleteDialog:
+        title: Delete provider?
+        description: This action cannot be undone. Features using this provider will be automatically reassigned to another available provider.
+        confirm: Delete
+        cancel: Cancel
+      atLeastOneLLMProvider: At least one LLM translation provider is required.
+      featureWouldLoseProvider: 'Cannot delete: "$1" would be left with no provider that can run it.'
+      providerInUseCannotDisable: 'Cannot disable "$1" because it is currently used by $2 feature(s).'
+      duplicateProviderName: 'Duplicate provider name "$1"'
+      defaultProvider:
+        translate: Set as default translate provider
+      models:
+        translate:
+          title: Translate model
+          customTitle: Translate custom model
+          placeholder: Select a model
+        fetchModels: Fetch available models
+        fetchError: Failed to fetch models
+        clickToRetry: Click to retry
+        noModels: No models available
+        selectModel: Select a model
+        apiKeyRequired: Please add API key first
+        searchModels: Search models...
+        noModelsFound: No models found
+        label: Model
+        enterCustomModel: Enter the name of the custom model
+      advancedOptions: Advanced options
+      providerSettingLabels:
+        region: Region
+        apiMode: API mode
+        resourceName: Azure resource name (optional)
+        apiVersion: API version
+      providerSettingOptionLabels:
+        responses: Responses API
+        chatCompletions: Chat Completions
+      temperature: Temperature
+      temperatureHint: Controls randomness in responses. Lower values (0) are more deterministic, higher values are more creative. Range varies by provider. Leave empty to use provider default.
+      reasoning:
+        title: Reasoning
+      headers: Headers
+      headersHint: Custom HTTP headers sent when creating the AI provider client. Leave empty to use provider defaults; use {} to disable defaults.
+      providerOptions: Provider options
+      providerOptionsHint: Provider-specific options for non-standard API features like thinking/reasoning mode. See the Vercel AI SDK docs or your provider's official documentation for configuration details.
+      providerOptionsDocsLink: View provider docs
+      providerOptionsRecommendationTrigger: View recommended provider options
+      providerOptionsRecommendationTitle: Recommended provider options detected
+      providerOptionsRecommendationDescription: Review and manually apply the recommended configuration.
+      providerOptionsRecommendationApply: Apply
+      providerOptionsRecommendationApplied: Applied
+      invalidJson: Invalid JSON format
+    providers:
+      name:
+        builtInAi: Built-in AI
+        builtInAiAdvance: Advanced Built-in AI
+        customChatComplete: Custom Chat Complete
+        customResponses: Custom Responses
+      attribution:
+        builtInAi: LiveLearn's hosted standard model. Non-Ultra users can use it only for Custom AI Actions; Ultra members can use it on more features.
+        builtInAiAdvance: LiveLearn's hosted advanced model, exclusive to Ultra members. Runs page translation, Custom AI Actions, and every other Built-in AI feature on a shared weekly quota. Uses up the quota faster than the standard model.
+      description:
+        openai: Provides models like GPT-4o
+        azure: Azure-hosted OpenAI models through your deployments
+        deepseek: Recommend to use in China
+        openrouter: Unified interface for multiple LLM providers with pay-per-use pricing
+        ollama: Run large language models locally on your machine for complete privacy
+        google: Google's flagship AI models with advanced reasoning capabilities
+        anthropic: Claude models known for safety and reasoning excellence
+        xai: Elon Musk's AI company offering Grok models with real-time data access
+        atlascloud: Unified OpenAI-compatible access to newer DeepSeek, Kimi, Qwen, Doubao, GLM, and other models
+        jalapenocloud: Enterprise-grade AI used by top teams — now made for you!
+        siliconflow: High-performance inference platform for Chinese and international models
+        tensdaq: Revolutionary bidding AI MaaS platform with market-driven pricing, eliminating high-cost fixed pricing
+        openaiCompatible: Connect to a custom endpoint compatible with the OpenAI Chat Completions API
+        openResponses: Connect to a custom endpoint compatible with the Open Responses API
+        deeplx: Unofficial DeepL API
+        deepl: Official DeepL API
+        bedrock: AWS managed service for enterprise-grade foundation models
+        groq: Specialized hardware for ultra-fast LLM inference speeds
+        deepinfra: Cost-effective cloud inference for popular open-source models
+        mistral: European AI company specializing in efficient multilingual models
+        togetherai: Collaborative platform for running and fine-tuning open-source models
+        cohere: Enterprise-focused AI with strong multilingual and RAG capabilities
+        fireworks: Production-ready inference platform for open-source models
+        cerebras: Ultra-fast AI inference for rapid translation and text analysis
+        replicate: Access to diverse open-source models for specialized translation tasks
+        perplexity: Real-time knowledge-enhanced AI for contextual translations and reading assistance
+        vercel: Optimized AI models for web content translation and analysis
+        volcengine: ByteDance's cloud AI platform offering Doubao models for translation and reading
+        minimax: MiniMax AI platform offering advanced MiniMax-M2 models for text generation
+        alibaba: Alibaba Cloud's Qwen model series with advanced reasoning and multilingual capabilities
+        moonshotai: Moonshot AI's Kimi model series with strong reasoning and long-context capabilities
+        huggingface: Hugging Face Inference API providing access to thousands of open-source models
+    apiKey:
+      showAPIKey: Show API key
+      getAPIKey: Get API key
+    howToConfigure: How to configure?
+    testConnection:
+      button: Test connection
+      testing: Testing...
+      success: Success
+      failed: Failed
+      slow: Slow (try adjusting thinking mode)
+    featureProviders:
+      title: Feature providers
+      description: Choose which provider to use for each feature
+      chooseProvider: Choose a provider
+      features:
+        pageTranslation: Page translation
+        selectionTranslation: Selection toolbar translation
+        inputTranslation: Input translation
+        videoSubtitles: Video subtitles
+        noteSuggestion: Note suggestions
+      descriptions:
+        pageTranslation: Translates the whole page in bilingual or replace mode.
+        selectionTranslation: Translates the text you select from the selection toolbar.
+        inputTranslation: Translates what you type into an input box before you send it.
+        videoSubtitles: Translates subtitles as they appear in a video player.
+        noteSuggestion: Suggests words worth saving to your Notebase after a selection translation.
+    languageDetection:
+      title: Language detection
+      description: Affects auto-translate language detection and Speaking voice selection accuracy.
+      mode:
+        basic: Basic
+        llm: LLM
+      provider:
+        label: Detection provider
+        placeholder: Select a provider
+      status:
+        noProviders: Configure an LLM provider first
+        basicRecommend: Recommend enabling LLM
+        llmEnabled: LLM detection enabled
+    aiContentAware:
+      title: AI smart context translation
+      description: Give the AI context from the page or video so it translates more accurately
+      enable: Enable
+      enableDescription: The AI reads a summary of the page or video before translating, so wording fits the context. Applies to every translation feature running on an LLM provider. Adds latency on the first request and increases API costs.
+      llmProviderConfigured: LLM provider selected for $1
+      llmProviderNotConfigured: No LLM provider selected for $1
+  patterns:
+    duplicate: This pattern is already in the list
+    gluedWildcard: A "*" has to stand for a whole part of the address, like *.example.com or example.*
+    unsupported: LiveLearn cannot match this address. Ports and schemes other than http and https are not supported.
+  preference:
+    title: Preferences
+    pageDescription: Set how LiveLearn looks, where it runs, and how your config is synced and backed up.
+    appearanceAndLanguage:
+      title: Appearance & language
+      theme:
+        title: Theme
+        description: Choose a theme for LiveLearn.
+        system: System
+        light: Light
+        dark: Dark
+      interfaceLanguage:
+        title: Interface language
+        description: Choose the language for the extension's interface, independent of your browser language.
+        auto: Auto (follow browser)
+    translationLanguage:
+      title: Translation languages
+      sourceCode:
+        title: Source language
+        description: The language pages are translated from. Auto-detect reads it from the page itself.
+        auto: Auto-detect
+      targetCode:
+        title: Target language
+        description: The language pages are translated into.
+    extensionActivation:
+      title: Extension activation
+      description: Whether LiveLearn runs everywhere except the sites you list, or only on the sites you list
+      manageSites: Manage sites
+      mode:
+        title: Activation mode
+        description: Use blacklist mode to disable the extension on specific sites, or whitelist mode to limit it to specific sites only.
+        blacklist: Only disable on listed sites
+        whitelist: Only run on listed sites
+      patterns:
+        enterUrlPattern: Enter URL pattern (e.g., example.com)
+        urlPattern: URL Pattern
+    config:
+      title: Config
+      googleDrive:
+        title: Google Drive cloud sync
+        description: Downloads config when remote is newer, uploads config when local is newer. Your glossaries travel in a file of their own, merged term by term rather than replaced.
+        sync: Sync to Google Drive
+        syncing: Syncing...
+        syncSuccess:
+          uploaded: Local config uploaded to cloud
+          downloaded: Remote config applied
+          sameChanges: Same config changes on both sides, synced
+          noChange: Config already in sync
+          unresolved: Config conflicts resolved and synced
+        syncError: Config sync failed, please try again
+        accountChangedError: The signed-in Google account changed while the dialog was open. Nothing was uploaded — sync again.
+        metadataCorrupted: Sync metadata corrupted, remote config applied
+        lastSyncTime: Last sync at
+        logout: Logout
+        logoutSuccess: Logged out from Google account
+        unresolved:
+          title: Configuration sync resolution
+          description: Local and remote configurations differ. Please choose which version to keep for each field.
+          resolved: Resolved
+          unresolved: Unresolved
+          localValue: Local value
+          remoteValue: Remote value
+          useLocal: Use local
+          useRemote: Use remote
+          useAllLocal: Use all local
+          useAllRemote: Use all remote
+          reset: Reset selection
+          progress: Resolved $1/$2 changes
+          confirm: Confirm sync
+          cancel: Cancel
+          hasUnresolvedInChildren: ⚠ Contains unresolved changes
+          item: item
+          items: items
+          unresolvedPrompt: "[Unresolved - please select]"
+          localLatest: Local latest
+          remoteLatest: Remote latest
+          bothChanged: Both changed
+          localChanged: Local changed
+          remoteChanged: Remote changed
+          configValid: Config is valid
+          configInvalid: Config is invalid
+          resolveToContinue: Resolve conflicts to continue
+          validationAlert:
+            title: The merged config has validation errors.
+            description: "Adjust the differences below to fix:"
+          moreErrors: ...and $1 more errors
+        glossary:
+          thisDevice: This device
+          cloud: Cloud
+          deleted: Deleted
+          disabled: off
+          upToDate: Glossaries already in sync
+          uploaded: Glossaries uploaded to cloud
+          merged: "Glossaries synced: $1 added, $2 updated, $3 removed"
+          undo: Undo
+          undone: Glossaries restored to how they were before the sync
+          undoUnavailable: That undo is no longer available — your glossaries have changed since.
+          retry: The glossary changed while syncing. Run it again.
+          accountChangedRetry: The signed-in Google account changed while the dialog was open. Nothing was uploaded — sync again.
+          busy: Another tab is syncing your glossaries right now.
+          malformed: The glossary file in your Drive could not be read, so nothing was changed.
+          versionTooNew: That glossary file was written by a newer version of LiveLearn. Update the extension first.
+          duplicateFiles: Your Drive holds more than one glossary file. Nothing was changed - please remove the extra one.
+          capExceeded: "Merging would go over the glossary limit by $1. Nothing was changed."
+          failed: Glossary sync failed
+          review:
+            title: Review this glossary sync
+            description: Choose what to keep where the two copies disagree.
+            firstSync: "First sync on this device: $1 coming from the cloud, $2 going up."
+            accountChanged: "Signed in as $1, which is not the account this device last synced with. Its $2 glossary rows will be uploaded to this account. To take only this account's glossaries, cancel, delete yours here, and sync again."
+            destructive: "This sync removes $1 of the $2 glossary rows on this device."
+            moreConflicts: "$1 more differences are not listed. Each keeps the merge's own choice."
+            confirm: Sync
+            cancel: Cancel
+      manualSync:
+        title: Manual config sync
+        description: Manually import and export your configuration settings, and your glossaries with them
+        import: Import
+        export: Export
+        importSuccess: Config imported successfully
+        exportSuccess: Config exported successfully
+        exportGlossaryFailed: Your settings were exported, but your glossaries could not be read and are not in the file.
+        importError: Import failed
+        glossaryImported: "$1 glossary terms were imported, replacing the ones you had."
+        glossaryUndo: Undo
+        glossaryUndone: Your glossaries were restored to how they were before the import
+        glossaryUndoUnavailable: That undo is no longer available — your glossaries have changed since.
+        glossaryMalformed: The glossaries in that file could not be read. Nothing was changed.
+        glossaryVersionTooNew: The glossaries in that file were written by a newer version of LiveLearn. Update the extension first.
+        glossaryCapExceeded: "That file holds $1 more glossary rows than the limit of $2. Nothing was changed."
+        exportOptions:
+          title: Select export options
+          description: Please choose whether to include API Keys in the exported config. Including API Keys may leak sensitive information, so it's recommended to use only in secure environments.
+          includeAPIKeys: Include API keys
+          excludeAPIKeys: Exclude API keys
+          cancel: Cancel
+      viewConfig:
+        open: Open config
+        title: Config
+        description: View the raw JSON of your current configuration
+      backup:
+        title: Config backup
+        description: Automatic backups are created every hour if the config is changed. You can restore previous configurations here. (Maximum $1 backups)
+        loading: Loading backups...
+        backupNow: Backup now
+        backupSuccess: Backup created successfully
+        restoreSuccess: Config restored successfully
+        empty:
+          title: No backups available yet
+          description: Backups are created automatically every hour if the config is changed.
+        item:
+          extensionVersion: "Extension version:"
+          schemaVersion: "Schema version:"
+          restore: Restore
+          export: Export
+          delete: Delete
+        restore:
+          title: Restore config backup?
+          description: Your current config will be automatically backed up if it is different from the latest backup. The oldest backup may be removed if the number of backups exceeds the limit.
+          cancel: Cancel
+          confirm: Restore
+        delete:
+          title: Delete backup?
+          description: Are you sure you want to delete this backup? This action cannot be undone.
+          cancel: Cancel
+          confirm: Delete
+      reset:
+        title: Reset config
+        description: Reset all config to default value. Your glossaries are not affected.
+        dialog:
+          title: Reset config
+          trigger: Reset config
+          confirm: Confirm
+          cancel: Cancel
+          description: This operation will clear all your custom configurations and reset them to default values. Your glossaries are kept — delete those from the glossary page. Please confirm.
+    userExperience:
+      title: User experience
+      beta:
+        title: Beta experience
+        description: Turn on experimental features that may still be unstable
+      analytics:
+        title: Help improve user experience
+        tooltip: When enabled, LiveLearn sends anonymous product usage signals so we can catch bugs, verify feature reliability, improve performance and UX polish, and prioritize future work.
+        description: Improve LiveLearn by helping us locate bugs, refine layouts, and more
+  shortcuts:
+    title: Shortcuts
+    pageDescription: Set the keys that trigger translation while you read.
+    setShortcut: Set shortcut
+    pageTranslation:
+      title: Page translation
+      description: Translate the whole page.
+    translationMode:
+      title: Translation mode
+      description: Switch between bilingual and translation only.
+    selectionTranslation:
+      title: Selection translation
+      description: Translate the text you selected.
+    subtitlesToggle:
+      title: Subtitle translation
+      description: Turn translated video subtitles on or off.
+    nodeTranslation:
+      title: Paragraph translation
+      description: Hover or long-press a paragraph to translate just that one.
+    translationHub:
+      title: Translation Hub
+      description: Open the Translation Hub in a new tab.
+  overlayTools:
+    title: Overlay Tools
+  inputTranslation:
+    title: Input Translation
+    pageDescription: Translate what you type in input boxes before you send it.
+    trigger:
+      title: Trigger
+      enable:
+        title: Enable
+        description: Press the space bar three times quickly in any input box to translate what you typed there.
+      threshold:
+        title: Trigger threshold
+        description: How long the presses may be apart, in milliseconds. Raise it if the trigger keeps missing, lower it if it fires while you are still typing.
+        error: Enter a value between $1 and $2
+    languages:
+      title: Translation languages
+      pair:
+        title: Language pair
+        description: What the typed text is read as, and what it is translated into. Either side can follow the source and target languages you translate pages with.
+      sourceCode: Page source language
+      targetCode: Translation target language
+      cycle:
+        title: Swap direction each time
+        description: Every trigger swaps the two languages, so triggering again brings the text back to the language you typed in.
+  floatingButton:
+    title: Floating Button
+    pageDescription: Set which side the floating button sits on, what a click does, and where it stays hidden.
+    demoImageAlt: Floating button demo
+    enable:
+      title: Enable floating button
+      description: Display the floating button on web pages for quick access to LiveLearn features
+    display:
+      title: Display
+      side:
+        title: Button side
+        description: Choose which side of the page the floating button is docked to
+        left: Left
+        right: Right
+      disabledSites:
+        title: Disabled sites
+        description: Configure websites where the floating button should be disabled
+        enterUrlPattern: Enter URL pattern
+        urlPattern: URL pattern
+    clickAction:
+      title: Click action
+      description: Choose the action when clicking the floating button
+      panel: Open side panel
+      translate: Toggle page translation
+    closeMenu:
+      disableForSite: Disable for this site
+      disableGlobally: Disable globally
+    tooltips:
+      togglePageTranslation: Toggle page translation
+      floatingButtonOptions: Floating button options
+      lockPosition: Lock position
+      unlockPosition: Unlock position
+      settings: Settings
+      feedback: Send feedback
+  selectionToolbar:
+    title: Selection Toolbar
+    pageDescription: Set which actions appear when you select text, and where the toolbar shows up.
+    demoImageAlt: Selection toolbar demo
+    enable:
+      title: Enable selection toolbar
+      description: Display the toolbar when selecting text on web pages for quick translation, speech, and AI actions
+    actions:
+      title: Actions
+      translate:
+        title: Translate
+        description: Show the translate button in the toolbar
+      speak:
+        title: Speak
+        description: Show the speak button, which reads the selected text aloud
+      noteSuggestion:
+        title: Note suggestions
+        description: After selection translation with an AI provider, suggest words to save to your Notebase
+        action: Action
+        actionDescription: The action that produces the suggestion
+        provider: Provider
+        providerDescription: The AI provider that generates the suggestion
+    display:
+      title: Display
+      opacity:
+        title: Opacity
+        description: Adjust the opacity of the selection toolbar and the expanded window opened from it
+      disabledSites:
+        title: Disabled sites
+        description: Configure websites where the selection toolbar should be disabled
+        enterUrlPattern: Enter URL pattern
+        urlPattern: URL pattern
+    closeMenu:
+      disableForSite: Disable for this site
+      disableGlobally: Disable globally
+    errors:
+      customActionFailed: Custom action failed
+      customActionFailedFallback: Custom action request failed
+      actionUnavailable: Selected action is unavailable
+      missingSelection: No selected text available
+      providerDisabled: Selected provider is disabled
+      providerUnavailable: Selected provider is unavailable
+    customActions:
+      title: Custom AI Actions
+      pageDescription: Write your own prompts and run them on selected text from the selection toolbar.
+      description: Add your own structured AI actions for selected text
+      configTitle: Action config
+      builtIn: Built-in
+      add: Add AI action
+      edit: Edit AI action
+      empty: No custom AI actions yet
+      noEnabledLlmProvider: Enable at least one LLM provider before creating custom AI actions
+      form:
+        name: Name
+        customize: Customize
+        customizeTooltip: Built-in instructions do not allow prompt changes. Click here to create an editable copy and modify the prompts.
+        icon: Icon
+        iconField:
+          chooseAriaLabel: Choose icon
+          chooseTitle: Choose an icon
+          inputPlaceholder: Enter an icon name
+          helpAriaLabel: More icon help
+          helpTitle: Can't find the icon you want?
+          helpStepBrowsePrefix: "Browse icons on "
+          helpStepBrowseSuffix: ""
+          helpStepCopyPrefix: "Copy the icon name, for example "
+          helpStepCopySuffix: ", then paste it into the field."
+        provider: Provider (requires structured output support)
+        selectProvider: Select a provider
+        systemPrompt: System prompt
+        prompt: Prompt
+        outputSchema: Output schema
+        addField: Add field
+        fieldName: Field name
+        fieldType: Field type
+        fieldDescription: Description
+        fieldDescriptionPlaceholder: Describe what this field should contain...
+        fieldSpeaking: Enable speaking
+        actions: Actions
+        cancel: Cancel
+        save: Save
+        defaultFieldName: Result
+        fieldNamePlaceholder: Field name
+        autoFieldPrefix: Field
+        addFieldDialog:
+          title: Add output field
+        editFieldDialog:
+          title: Edit output field
+          save: Save
+        deleteFieldDialog:
+          title: Delete output field?
+          description: This output field will be removed.
+          confirm: Delete
+          cancel: Cancel
+        notebase:
+          title: Notebase connection
+          description: Save this action's structured results to a remote notebase.
+          loginRequiredTitle: Log in to configure Notebase
+          loginRequiredDescription: Sign in on readfrog.app before choosing a notebase or editing mappings.
+          loginRequiredConnectedDescription: This connection was created by the account below. If you log in as the same account, field mappings will be restored. If you log in as another account, the previous mappings will be cleared when you create or connect a Notebase.
+          loginAction: Log in
+          connectedAccountLabel: Connected account
+          currentAccountLabel: Current account
+          unknownConnectedAccount: Unknown account
+          tableLabel: Notebase
+          tablePlaceholder: Select a notebase
+          tableClearOption: Disconnect notebase
+          clearConnectionAction: Clear connection
+          refreshAction: Refresh
+          emptyTitle: No notebases yet
+          emptyDescription: Create a notebase on readfrog.app, then come back here to map fields.
+          openNotebaseAction: Open Notebase
+          accessDeniedTitle: Cannot access Notebase
+          accessDeniedDescription: This account does not have permission to load Notebase data.
+          listErrorTitle: Failed to load notebases
+          listErrorDescription: Try refreshing the Notebase list again in a moment.
+          accountMismatchTitle: Notebase connection belongs to another account
+          accountMismatchDescription: This connection is tied to the connected account below. Clear it, or choose a Notebase available to the current account.
+          tableUnavailableTitle: Selected notebase is no longer available
+          tableUnavailableDescription: This Notebase no longer exists or cannot be opened. Clear the connection or choose another Notebase.
+          tableUnavailableOption: unavailable
+          schemaErrorTitle: Failed to load notebase schema
+          schemaErrorDescription: Try refreshing the schema again in a moment.
+          schemaLoading: Loading notebase schema...
+          mappingsLabel: Field mappings
+          mappingsEmpty: No mappings yet. Add one when you are ready to save fields.
+          addMappingAction: Add mapping
+          removeMappingAction: Remove mapping
+          localFieldLabel: Action field
+          localFieldPlaceholder: Select an action field
+          remoteFieldLabel: Notebase field
+          remoteFieldPlaceholder: Select a notebase field
+          columnUnavailableOption: removed
+          invalidMappingsTitle: Some mappings need attention
+          invalidMappingsDescription: Invalid mappings are preserved. Fix them before saving to Notebase.
+          mappingMissingLocal: The mapped action field no longer exists.
+          mappingMissingRemote: The mapped notebase field no longer exists.
+          mappingMissingSchema: Refresh the notebase schema to validate this mapping.
+          mappingIncompatible: The field types no longer match.
+        tokens:
+          selection: Selected text content
+          paragraphs: Intersecting paragraph text joined with blank lines, truncated to the first 2000 characters when sent to custom AI actions
+          targetLanguage: "User's target language"
+          webTitle: Webpage title
+          webContent: Webpage content extracted from the current page, truncated to the first 2000 characters
+        delete: Delete
+        deleteDialog:
+          title: Delete custom action?
+          description: This action cannot be undone.
+          confirm: Delete
+          cancel: Cancel
+      templates:
+        dialogTitle: Choose a template
+        dialogDescription: Select a template to quickly create a new AI action, or start from scratch.
+        dictionary:
+          name: Dictionary
+          description: Look up words with definitions, phonetics, and paragraph translations
+          systemPrompt: |-
+            You are a dictionary assistant for language learners.
+
+            ## Goal
+            Given a term and its surrounding paragraphs, produce a concise dictionary entry that matches the required output object.
+
+            ## Rules
+            1. Focus on the meaning that best matches the provided paragraphs.
+            2. Normalize Term to its base/canonical form.
+            3. Keep Definition precise and learner-friendly.
+            4. For Sentence, extract only the complete sentence from the provided paragraphs that contains the selected term. Do not include surrounding sentences.
+            5. Sentence Translation must translate only the extracted Sentence.
+            6. Phonetic must use the standard notation for the term's language (e.g., IPA for English, pinyin for Mandarin, romaji for Japanese).
+            7. Part of Speech in English (noun, verb, adjective, etc.).
+            8. Difficulty must be a CEFR level (A1, A2, B1, B2, C1, or C2).
+            9. If a field is unknown, return an empty string instead of guessing.
+            10. Respond in {{targetLanguage}} for all textual fields unless source-form text is required for clarity.
+
+            ## Examples
+
+            ### Example 1
+            Input: Selection="blossoms", Paragraphs="Spring arrives quietly in the park. The ephemeral beauty of cherry blossoms reminds us to cherish each moment. Families and friends gather beneath the trees.", Target language=Chinese
+
+            Output:
+            - Term: blossom
+            - Phonetic: /ˈblɒs.əm/
+            - Part of Speech: noun
+            - Sentence: The ephemeral beauty of cherry blossoms reminds us to cherish each moment.
+            - Definition: 花；花朵（尤指果树的花）
+            - Sentence Translation: 樱花短暂的美丽提醒我们珍惜每一刻。
+            - Difficulty: B2
+
+            ### Example 2
+            Input: Selection="感動", Paragraphs="この映画はつまらないと思ったけど、最後は感動した。", Target language=English
+
+            Output:
+            - Term: 感動
+            - Phonetic: kandou
+            - Part of Speech: noun
+            - Sentence: この映画はつまらないと思ったけど、最後は感動した。
+            - Definition: Being deeply moved; emotional touch
+            - Sentence Translation: I thought this movie was boring, but the ending was moving.
+            - Difficulty: B1
+          prompt: |-
+            ## Input
+            Selection: {{selection}}
+            Paragraphs: {{paragraphs}}
+            Target language: {{targetLanguage}}
+          fieldTerm: Term
+          fieldTermDescription: Base/canonical lemma of the selected term.
+          fieldPhonetic: Phonetic
+          fieldPhoneticDescription: Standard phonetic transcription for the term's language (e.g., IPA for English, pinyin for Mandarin, romaji for Japanese).
+          fieldPartOfSpeech: Part of Speech
+          fieldPartOfSpeechDescription: Grammatical category (e.g., noun, verb, adjective).
+          fieldSentence: Sentence
+          fieldSentenceDescription: The complete sentence from the paragraphs above that contains the selected term. Do not include surrounding sentences.
+          fieldDefinition: Definition
+          fieldDefinitionDescription: One concise definition for the contextual sense.
+          fieldSentenceTranslation: Sentence Translation
+          fieldSentenceTranslationDescription: The translation of Sentence only.
+          fieldDifficulty: Difficulty
+          fieldDifficultyDescription: Estimated CEFR difficulty level A1, A2, B1, B2, C1, or C2.
+        improveWriting:
+          name: Improve Writing
+          description: Analyze writing errors and suggest improvements
+          systemPrompt: |-
+            You are a writing assistant for language learners.
+
+            ## Goal
+            Given selected text and its surrounding paragraphs, analyze writing issues and produce an improved version.
+
+            ## Language Policy (critical)
+            1. Detect the original language of Selection as {{originLanguage}}.
+            2. The "Error Analysis" field must be written in {{targetLanguage}}.
+            3. The "Improved Version" field must stay in {{originLanguage}}.
+            4. Never translate "Improved Version" into {{targetLanguage}} unless {{originLanguage}} is already {{targetLanguage}}.
+
+            ## Writing Rules
+            1. Identify grammar, spelling, punctuation, and word choice errors.
+            2. Keep edits natural and preserve the author's intent and tone.
+            3. If there are no major errors, state that clearly in "Error Analysis" and return a lightly polished "Improved Version".
+            4. Keep "Improved Version" concise and directly usable.
+
+            ## Examples
+            Example A:
+            - Selection: "He go to school yesterday, and he don't finish his homework."
+            - Detected {{originLanguage}}: English
+            - {{targetLanguage}}: Chinese
+            - Error Analysis (Chinese — {{targetLanguage}}): 存在主谓一致和时态错误：go 应改为 went，don't 应改为 didn't，finish 应改为 finish 的过去时语境搭配。
+            - Improved Version (English — {{originLanguage}}): He went to school yesterday, and he didn't finish his homework.
+
+            Example B:
+            - Selection: "昨日私は友達に会いて、一緒に映画を見るました。"
+            - Detected {{originLanguage}}: Japanese
+            - {{targetLanguage}}: English
+            - Error Analysis (English — {{targetLanguage}}): There are verb conjugation errors: "会いて" should be "会って" (te-form of 会う), and "見るました" should be "見ました" (past tense of 見る in masu-form).
+            - Improved Version (Japanese — {{originLanguage}}): 昨日私は友達に会って、一緒に映画を見ました。
+          prompt: |-
+            ## Input
+            Selection: {{selection}}
+            Paragraphs: {{paragraphs}}
+            Target language: {{targetLanguage}}
+          fieldErrorAnalysis: Error Analysis
+          fieldErrorAnalysisDescription: Explain grammar, spelling, punctuation, and word-choice issues in {{targetLanguage}}.
+          fieldImprovedVersion: Improved Version
+          fieldImprovedVersionDescription: Corrected and improved version of the selected text in its original language.
+        blank:
+          name: Blank
+          description: Start from scratch with an empty action
+      errors:
+        nameRequired: Name is required
+        duplicateName: 'Duplicate action name "$1"'
+        invalidIcon: Invalid Iconify icon string
+        providerRequired: Please select an enabled LLM provider
+        outputSchemaRequired: Add at least one output field
+        fieldKeyRequired: Field name is required
+        duplicateFieldKey: Field names must be unique
+  advanced:
+    title: Advanced
+    pageDescription: Powerful settings that are not part of the everyday path.
+    glossary:
+      title: Glossary
+      pageDescription: Give the words that matter to you a fixed translation, and choose where each list applies.
+      untitled: Untitled glossary
+      noGlossaries: No glossaries yet.
+      enable:
+        title: Enable
+        description: Send matching terms to the LLM so it renders them your way. The glossary travels in the prompt, so it only applies to features running on an LLM provider.
+      library:
+        title: Your glossaries
+        description: Each glossary has its own terms and its own list of websites, so a set of terms for work does not follow you onto everything else.
+        button: Add a glossary
+        capReached: "You can have at most $1 glossaries."
+        termUsage: "$1 of $2 terms used across all glossaries"
+      summary:
+        terms: "$1 terms"
+        termsOne: 1 term
+        allSites: All websites
+        sites: "$1 websites"
+        sitesOne: 1 website
+      editor:
+        sections:
+          terms: Terms
+          maintenance: Backup and deletion
+        details:
+          title: Name and description
+          descriptionPlaceholder: Description (optional)
+        enable:
+          title: Enable
+          description: A disabled glossary keeps its terms but sends none of them.
+        sites:
+          title: Websites
+          description: Restrict this glossary to certain websites. *.example.com covers the site and its subdomains; example.com on its own matches only that exact address.
+          allSites: Leave this empty and the glossary applies everywhere.
+          header: Website
+        delete:
+          title: Delete this glossary
+          description: Removes the glossary and every term in it. Export first if you might want the terms back — this cannot be undone.
+          dialog:
+            trigger: Delete
+            title: Delete this glossary?
+            description: "The glossary and all $1 terms in it will be permanently deleted. This action cannot be undone."
+            confirm: Delete
+            cancel: Cancel
+      addTerm:
+        title: Add a term
+        description: Give a term the wording you want, or leave the translation empty to keep it unchanged.
+      list:
+        title: Your terms
+        description: Only the terms that appear in a paragraph are sent with it.
+      importExport:
+        title: Import and export
+        description: Terms are a CSV of source, target, targetLanguage and caseSensitive columns — the file Export writes.
+      sourcePlaceholder: Term
+      targetPlaceholder: Translation (leave empty to keep the original)
+      caseSensitive: Match case
+      add: Add
+      searchPlaceholder: Search terms
+      columnEnabled: Enabled
+      columnSource: Term
+      columnTarget: Translation
+      columnTargetLanguage: Target language
+      allLanguages: All languages
+      toggleTerm: "Use $1"
+      editTerm: "Edit $1"
+      keepOriginal: Keep the original
+      delete: Delete
+      save: Save
+      cancel: Cancel
+      loading: Loading...
+      empty: No terms yet. Add one above, or import a CSV file.
+      noMatches: No terms match your search.
+      previous: Previous
+      next: Next
+      pageOf: "$1 / $2"
+      addError:
+        emptySource: Enter a term first.
+        tooLong: That term is too long.
+        capReached: "Your glossaries have reached the limit of $1 terms in total."
+        duplicate: That term is already in your glossary.
+      import: Import
+      export: Export
+      importModeMerge: Add to list
+      importModeReplace: Replace list
+      importEmpty: No terms found in that file.
+      importMissingHeader: "That file is not a LiveLearn glossary export. It needs these columns:"
+      importOverflow: "That import would exceed the limit by $1 terms. Nothing was changed."
+      importSuccess: "Imported $1 new and updated $2 terms."
+      importSkipped: "Skipped $1 invalid rows and $2 duplicates."
+      importNoValidRows: None of those rows could be imported. Nothing was changed.
+      importReplaceConfirm:
+        title: Replace the whole list?
+        description: "All $1 terms in this glossary will be deleted — every target language, not just the one selected — and replaced with the contents of this file. This cannot be undone."
+        confirm: Replace
+        cancel: Cancel
+      deleteAll:
+        title: Delete all terms
+        description: Empty your glossary. Export first if you might want the terms back — deleting them cannot be undone.
+        deleting: Deleting...
+        dialog:
+          title: Delete all terms
+          trigger: Delete all
+          confirm: Confirm
+          cancel: Cancel
+          description: "All $1 terms will be permanently deleted. This action cannot be undone."
+  contextMenu:
+    title: Context Menu
+    pageDescription: Control the LiveLearn entries in the browser's right-click menu.
+    demoImageAlt: Context menu demo
+    enable:
+      title: Enable context menu translate
+      description: Add translate options to the browser right-click menu for quick page and selection translation
+  translation:
+    title: Page Translation
+    pageDescription: Control how pages get translated — mode, range, prompts, and request limits.
+    preference:
+      title: Basics
+      translationMode:
+        title: Translation mode
+        description: "Choose how the translated text is displayed: bilingual or translation only."
+        mode:
+          bilingual: Bilingual
+          translationOnly: Translation only
+        switched: "Translation mode: $1"
+        providerNotSupported: $1 doesn't support translation-only mode. To enable it, switch to another provider.
+      translateRange:
+        title: Translation range
+        description: Select whether to translate only the main content or all content on the page.
+        range:
+          main: Main content
+          all: All content
+    hoverTranslation:
+      title: Hover translation
+      enable:
+        title: Enable
+        description: Hover or long-press a paragraph to translate just that one.
+      forceRetranslation:
+        title: Always request a fresh translation
+        description: Hover translation skips the cache — it re-translates even if the text is already cached, and overwrites the cached result.
+    translationStyle:
+      title: Translation display style
+      description: Set any style you want to distinguish translation results from original text
+      useCustomStyle: Use custom CSS style
+      useCustomStyleDescription: Supports any CSS, including fonts, animations, and language-specific styles
+      presetStyle: Preset style
+      cssEditor: CSS editor
+      cssEditorDescription: Write your own CSS and preview how translated text looks.
+      preview: Preview
+      stylePreviewLanguage: Language
+      stylePreviewDirection: Direction
+      stylePreviewTranslatedText: Translated text
+      style:
+        default: None
+        blur: Blur effect
+        blockquote: Blockquote
+        weakened: Weakened
+        dashedLine: Dashed line
+        border: Border
+        textColor: Text color
+        background: Background
+      customCSS:
+        editor:
+          placeholder: |
+            /* Example: Custom style with color and background */
+            [data-read-frog-custom-translation-style='custom'] {
+              color: #414535;
+              background-color: light-dark(#F2E3BC, #C19875);
+              padding: 2px 4px;
+              border-radius: 4px;
+            }
+          docsLink: How to configure?
+          saveButton: Save
+          savedButton: Saved
+          validation:
+            validating: Validating...
+            valid: CSS is valid
+            syntaxError: CSS has syntax errors
+            tooLong: CSS is too long
+            saved: All changes saved
+    personalizedPrompts:
+      title: Customize page prompts
+      description: Customizing different types of Prompts allows you to adjust the Prompt type yourself during translation. A Prompt represents the text that the user sends to the LLM.
+      managePrompts: Manage prompts
+      communityPrompts: Get or share prompts from community
+      communityPromptsUrl: https://github.com/mengxi-ream/read-frog/discussions/821
+      addPrompt: Add prompt
+      default: Default
+      builtIn: Built-in
+      copyAndCustomize: Copy and customize
+      copyName: "$1 copy"
+      builtInPrompts:
+        default:
+          description: Balanced, reliable translation for everyday content
+        precisionRewrite:
+          name: Polished rewrite
+          description: More idiomatic, colloquial translations; slightly higher token usage
+      importSuccess: Import success
+      import: Import
+      export: Export
+      current: in use
+      editPrompt:
+        title: Edit prompt
+        name: Name
+        systemPrompt: System prompt
+        prompt: Prompt
+        promptCellInput:
+          input: Text content to translate
+          targetLanguage: Target language
+          webTitle: Webpage title
+          webDescription: Webpage description from page metadata
+          webContent: Webpage content (truncated to the first 2000 characters)
+          webSummary: Webpage summary (requires AI smart context)
+        save: Save changes
+        close: Cancel
+      deletePrompt:
+        title: Delete prompt
+        description: Confirm delete prompt
+        confirm: Confirm
+        cancel: Cancel
+      exportPrompt:
+        exportSelected: Export selected
+        cancel: Cancel
+    translationControl:
+      title: Translation control
+      description: What starts translating on its own, what never does, and what gets skipped
+      manageControls: Manage controls
+      autoTranslateWebsite:
+        title: Auto translate based on website
+        description: Sites that start translating as soon as they open
+        urlPattern: URL pattern
+        enterUrlPattern: Enter URL pattern
+      neverAutoTranslateWebsite:
+        title: Never auto translate based on website
+        description: Sites that never translate on their own, even when a language rule matches
+        urlPattern: URL pattern
+        enterUrlPattern: Enter URL pattern
+      autoTranslateLanguages:
+        title: Auto translate based on language
+        description: Automatically translate page content when specific languages are detected
+        selectLanguages: Select languages
+      skipLanguages:
+        title: Auto skip based on language
+        description: Automatically skip paragraph translation when specific languages are detected
+        targetLanguageSkipDescription: Skip paragraphs already in the target language, without sending a request
+        selectLanguages: Select languages
+      smallParagraphFilter:
+        title: Small paragraph filter
+        description: These global defaults skip translating text nodes with fewer characters or words than the thresholds. Matching site rules can override them (0 = disabled)
+        minCharacters:
+          description: "Minimum characters: shorter text stays untranslated. Use 0 to translate everything"
+        minWords:
+          description: "Minimum words: text with fewer words stays untranslated"
+        error: Value must be between $1 and $2
+    translationQueue:
+      title: Translation queue
+      description: How fast requests go out, how much text each carries, and how far ahead of the reader they run
+      manageQueue: Manage queue
+      requestQueueConfig:
+        title: Translation rate
+        capacity:
+          description: "Maximum burst requests: how many can go out at once"
+        rate:
+          description: "Requests per second: the steady pace after a burst. Decimals work, so 0.25 sends one request every 4 seconds"
+      batchQueueConfig:
+        title: Batch translation
+        description: Configure character limits and maximum paragraph count for batch translation (only effective for LLM translation)
+        maxCharactersPerBatch:
+          description: "Maximum characters: how much text one AI request carries"
+        maxItemsPerBatch:
+          description: "Maximum paragraphs: how many paragraphs share one request. Providers that are not AI ignore both"
+      preloadConfig:
+        title: Pre-translate range
+        description: Control how much content below the viewport gets pre-translated to save API costs
+        margin:
+          description: "Preload distance: how far below the screen to translate ahead, in pixels. Less saves API cost"
+        threshold:
+          description: "Visibility threshold: how much of a paragraph must be on screen before it is translated, from 0 to 1"
+    cache:
+      title: Cache
+      clearCache:
+        title: Clear cache
+        description: Clear all translation cache in your browser
+        clearing: Clearing...
+        dialog:
+          title: Clear cache
+          trigger: Clear cache
+          confirm: Confirm
+          cancel: Cancel
+          description: This operation will clear all translation cache. This action cannot be undone.
+  siteRules:
+    title: Site rules
+    description: Per-site rules that adjust how specific websites are translated.
+    userRules:
+      title: User Rules
+      description: Define your own site rules as a JSON array. Rules apply to pages whose URL matches their patterns; user rules take precedence over built-in rules.
+      saveButton: Save
+      savedButton: Saved
+      validation:
+        validating: Validating...
+        valid: Rules are valid
+        syntaxError: JSON has syntax errors
+        notArray: The top-level JSON value must be an array of rules
+        tooLong: Rules document is too long
+        tooMany: Too many rules
+        duplicateIds: Duplicate rule ids
+        schemaErrors: Some rules are invalid
+        moreErrors: ...and $1 more errors
+        saved: All changes saved
+    builtIn:
+      title: Built-in Rules
+      description: Site rules shipped with the extension. Disable a rule with its switch if it causes problems on a site.
+      searchPlaceholder: Search by id, description, or URL pattern
+      showMore: Show more
+      count: Showing $1 of $2 rules
+  tts:
+    title: Text to Speech
+    pageDescription: Read any selection aloud with a natural voice.
+    voice:
+      title: Voice
+      selectPlaceholder: Select a voice
+      noVoicesFound: No voices found
+      language:
+        title: Language voice
+        description: Pick a language, then the voice that reads it aloud. Reset puts back the voice LiveLearn picks for that language.
+        reset: Reset
+        previewSample: Hello from LiveLearn! This is how I will sound when reading aloud.
+      fallback:
+        title: Fallback voice
+        description: The voice for any language you have not given one of its own.
+    speech:
+      title: Speech
+      rate:
+        title: Rate
+        description: How much faster or slower the voice reads than its own pace, from -100 to 100 percent.
+      pitch:
+        title: Pitch
+        description: How much higher or lower the voice speaks than its own pitch, from -100 to 100 hertz.
+      volume:
+        title: Volume
+        description: How much louder or quieter the voice reads than its own level, from -100 to 100 percent.
+      error: Enter a whole number between $1 and $2
+  videoSubtitles:
+    title: Video Subtitles
+    pageDescription: Translate subtitles as you watch, with their own provider, style, and request settings.
+    preference:
+      title: Basics
+      enable:
+        title: Enable video subtitles
+        description: Puts a translate button in the video player's controls. YouTube only, for now.
+      autoStart:
+        title: Translate on open
+        description: Start translating as soon as a video loads, without pressing the button.
+      aiSegmentation:
+        title: AI smart segmentation
+        description: Lets AI re-cut the subtitles into lines that read as sentences. It sets their timing too, so lines can drift out of sync. Needs an LLM translation provider.
+    aiQuota:
+      title: AI subtitles quota
+      description: AI speech recognition gets you accurate subtitles for any video
+      launchBonusPromo: Subscribe before $1 for an extra 300 transcription minutes
+      loginRequired: Log in to view your AI subtitles quota
+      upgradeRequired: AI subtitles require a Pro or Ultra subscription
+      pools:
+        subscription: Monthly quota
+        launchBonus: Launch gift
+      resetsOn: Resets on $1
+      expiresOn: Expires on $1
+      loadError: Unable to load your quota. Please try again later.
+      remainingOf: $1 / $2 min left
+      used: Used $1 min
+    style:
+      title: Subtitle style
+      description: Display mode, position, fonts, colors and background, set against a live preview
+      customizeStyle: Customize style
+      displayMode:
+        title: Display mode
+        bilingual: Bilingual
+        originalOnly: Original only
+        translationOnly: Translation only
+      translationPosition:
+        title: Translation position
+        above: Above
+        below: Below
+      generalSettings: General
+      mainSubtitle: Main subtitle
+      translationSubtitle: Translation subtitle
+      fontFamily: Font
+      fontScale: Font scale
+      color: Color
+      fontWeight: Font weight
+      backgroundOpacity: Background opacity
+      reset: Reset to default
+      customCSS:
+        title: Custom CSS
+        description: Extra CSS for the subtitle lines, on top of the fonts and colors above
+        presetTemplate: Preset template
+        presetTemplateDescription: Apply a ready-made template — such as blurring the translation to cover it while you train your listening
+        presetPlaceholder: Choose a template
+        presets:
+          blurTranslation: Blur translation
+          dashedTranslation: Dashed translation
+          dimOriginal: Dim original
+        editor:
+          placeholder: |
+            /* Example: blur the translation, and reveal it on hover */
+            .subtitles-translation {
+              filter: blur(6px);
+            }
+
+            .subtitles-translation:hover {
+              filter: none;
+            }
+
+            /* Selectors you can use: .read-frog-subtitles-box, .subtitles-main, .subtitles-translation */
+          docsLink: How to configure?
+          saveButton: Save
+          savedButton: Saved
+          validation:
+            validating: Validating...
+            valid: CSS is valid
+            syntaxError: CSS has syntax errors
+            tooLong: CSS is too long
+            saved: All changes saved
+    customPrompts:
+      title: Custom subtitle prompts
+      description: Prompt templates for subtitle translation, kept apart from the webpage translation ones
+      managePrompts: Manage prompts
+      editPrompt:
+        promptCellInput:
+          input: Subtitle text to translate
+          targetLanguage: Target language
+          webTitle: Webpage title
+          webDescription: Webpage description from page metadata
+          videoSummary: Video summary (requires AI smart context)
+    subtitlesQueue:
+      title: Subtitle queue
+      description: How fast subtitle requests go out and how many lines each carries
+      manageQueue: Manage queue
+      requestQueueConfig:
+        title: Translation rate
+        capacity:
+          description: "Maximum burst requests: how many can go out at once"
+        rate:
+          description: "Requests per second: the steady pace after a burst. Decimals work, so 0.25 sends one request every 4 seconds"
+      batchQueueConfig:
+        title: Batch translation
+        description: Configure character limits and maximum subtitle line count for batch translation (only effective for LLM translation)
+        maxCharactersPerBatch:
+          description: "Maximum characters: how much text one AI request carries"
+        maxItemsPerBatch:
+          description: "Maximum subtitle lines: how many lines share one request. Providers that are not AI ignore both"
+    cache:
+      title: Cache
+      clearCache:
+        title: Clear AI segmentation cache
+        description: Segmentation results kept so a video you have already watched is not cut again
+        clearing: Clearing...
+        dialog:
+          title: Clear AI segmentation cache
+          trigger: Clear cache
+          confirm: Confirm
+          cancel: Cancel
+          description: This will delete all cached AI segmentation results. The next time you play a video with AI segmentation enabled, it will re-process the subtitles.
+  whatsNew:
+    title: What's New
+  rateUs:
+    title: Rate Us
+  configMigration:
+    versionTooNew: The imported config version is newer, please upgrade LiveLearn to the latest version
+    validationError: Config validation failed
+side:
+  sourceLang: Source Language
+  targetLang: Target Language
+  fileExport: File Export
+translateService:
+  title: Translation Service
+  description: For translate the webpage only
+  builtInModels: Built-in Models
+  llmModels: LLM Models
+  normalTranslator: Normal Translators
+  selectServices: Select services
+  translationProviders: Translation Providers
+  configureAPI: Configure API
+translatePrompt:
+  title: AI Translation Style
+  description: Select a Prompt to use during translation. Add or modify custom Prompts on the options page.
+languageLevel: Your Source Lang Level
+languageLevels:
+  beginner: Beginner
+  intermediate: Intermediate
+  advanced: Advanced
+noAPIKeyConfig:
+  warning: If you want to use AI models, please set API key on the options page first
+  warningWithLink:
+    youMust: You must
+    setTheAPIKey: set the API key
+    firstOnThe: first on the
+    optionsPage: options
+    page: page
+languageDetection:
+  llmFailed: LLM language detection failed, fell back to basic detection
+translation:
+  sameLanguage: Source and target languages must be different
+  autoModeSameLanguage: Detected language '$1' is the same as target language
+  extensionContextInvalidated: The extension was updated. Refresh this page and try again.
+speak:
+  fetchingAudio: Generating audio...
+  playingAudio: Playing audio...
+  failedToGenerateSpeech: Failed to generate speech
+  noTextSelected: No text selected
+  openaiNotConfigured: OpenAI provider is not configured or enabled
+  openaiApiKeyNotConfigured: OpenAI API key is not configured
+action:
+  copy: Copy
+  copied: Copied
+  regenerate: Regenerate
+  viewContextDetails: Context
+  customizeCustomAction: Customize $1 action
+  saveToNotebase: Save to Notebase
+  saveToNotebaseSaving: Saving...
+  saveToNotebaseSuccess: Saved to Notebase
+  saveToNotebaseFailed: Failed to save to Notebase
+  saveToNotebaseLoginRequired: Log in on readfrog.app to save to Notebase
+  saveToNotebaseAccessDenied: This account cannot access the selected Notebase
+  saveToNotebaseLimitExceeded: Upgrade is required to save more Notebase notes
+  saveToNotebaseTableUnavailable: The selected Notebase is no longer available
+  saveToNotebaseConnectionInvalid: This Notebase connection is out of date. Refresh it in Custom AI Actions and fix the mappings.
+  saveToNotebaseNoMappings: Add at least one valid mapping before saving
+  saveToNotebaseCreateTitle: Create a Notebase?
+  saveToNotebaseCreateDescription: Create a new Notebase with columns matching this Custom Action, then save this result as the first note.
+  saveToNotebaseCreateAndSave: Create and save
+  saveToNotebaseCreateAndSaveShort: Create and save
+  saveToNotebaseLoginAndCreate: Log in and auto-create
+  saveToNotebaseLoginAndSave: Log in and save
+  saveToNotebaseConnectExisting: Connect existing Notebase
+  saveToNotebaseGoConfigure: Configure
+  saveToNotebaseLoginConnectedTitle: Log in to save?
+  saveToNotebaseLoginConnectedDescription: This Custom Action is connected to the account below. After login, LiveLearn will save to the existing Notebase when possible, or create a new Notebase for the logged-in account.
+  saveToNotebaseConnectionUnavailableTitle: Notebase connection unavailable
+  saveToNotebaseMissingNotebaseDescription: The old Notebase no longer exists or cannot be opened by this account. Create a new Notebase and save this result, or connect an existing Notebase in Custom AI Actions.
+  saveToNotebaseAccountUnavailableDescription: The logged-in account does not match the connected account below. Creating and saving will replace the previous connection and field mappings. You can also connect an existing Notebase in Custom AI Actions.
+  saveToNotebasePendingLogin: Log in to finish saving
+  saveToNotebasePendingLoginDescription: After login, LiveLearn will create the Notebase and save this result automatically.
+  saveToNotebasePendingConnectedLoginDescription: After login, LiveLearn will save to the connected Notebase when possible. If this account cannot use it, LiveLearn will create a new Notebase and save this result.
+  upgrade: Upgrade
+  updatePayment: Update payment
+  openCustomActions: Open Custom AI Actions
+  openNotebase: Open Notebase
+  contextDetailsTitleLabel: Title
+  contextDetailsParagraphsLabel: Paragraphs
+  translation: Translation
+  speak: Speak
+  playing: Playing
+noteSuggestion:
+  title: You might want to save
+  description: Choose which words to save to your Notebase and review anytime.
+  save: Save
+  saved: Saved
+  staleSuggestion: This suggestion is out of date
+  toggleLabel: Show note suggestions
+thinking:
+  label: Thinking
+  complete: Thinking complete
+  expand: Expand thinking
+  collapse: Collapse thinking
+shortcutKeySelector:
+  placeholder: Please enter the shortcut
+subtitles:
+  sidebar:
+    close: Close the learning panel
+    needsSubtitles: This video has no subtitles — try generating AI subtitles first.
+    menu:
+      label: Learning
+    summary:
+      tab: AI summary
+      generating: Generating the summary…
+      failedTitle: Could not generate
+      retry: Try again
+      needsModel: Pick an LLM model for video subtitles to summarize this video.
+      openSettings: Open settings
+    transcript:
+      tab: Subtitles
+      failedTitle: Could not load subtitles
+      retry: Try again
+      emptyTitle: No subtitles to show
+      backToCurrent: Back to current
+  loadingAiSubtitles: Loading AI subtitles… (estimated 3 min)
+  aiSubtitlesHint: Accurate subtitles generated by advanced AI speech recognition — available even when no official subtitles exist.
+  requestAiSubtitles: Request AI subtitles
+  usingAiSubtitles: Using AI subtitles
+  toggle:
+    enabled: Subtitle translation on
+    disabled: Subtitle translation off
+  actions:
+    downloadTranslated: Download translated subtitles
+    downloadTranslatedPreparing: Preparing subtitles, longer videos may take a while
+    downloadTranslatedTranslating: Translating subtitles
+    downloadTranslatedComplete: Translated subtitles downloaded
+    downloadSource: Download source subtitles
+  state:
+    loading: LiveLearn loading captions
+    translating: Translating…
+    error: Error occurred
+  errors:
+    http429: 429 Too many requests to youtube subtitle API, please try again later
+    http404: 404 Youtube captions not found
+    http403: 403 Youtube caption access denied
+    http500: 500 Youtube server error
+    httpUnknown: HTTP error $1
+    invalidResponse: Invalid Youtube subtitle response format
+    networkError: Network error occurred when fetching captions
+    fetchSubTimeout: Fetching youtube captions timed out
+    buttonNotFound: Subtitle button not found
+    noSubtitlesFound: No subtitles available for this video
+    videoNotFound: Video element not found
+    controlsBarNotFound: Controls bar not found
+    aiRateLimited: Too many requests, please try again later
+    aiAuthFailed: API authentication failed, please check your API key
+    aiServiceUnavailable: Translation service temporarily unavailable
+    aiQuotaExceeded: Monthly AI subtitle quota used up
+    aiQuotaExceededWithReset: Monthly AI subtitle quota used up · resets on $1
+    aiLoginRequired: Log in to view your AI subtitles quota
+    aiSubscriptionRequired: AI subtitles require a Pro or Ultra subscription
+    aiPaymentRequired: Update your payment method to keep generating AI subtitles
+    aiVideoTooLong: This video is too long for AI subtitles
+    aiLiveReplayUnsupported: AI subtitles aren't available for live stream replays yet
+    aiStillProcessing: Transcription is still running — click again in a few minutes to pick it up
+    aiRequestFailed: AI subtitle request failed, please try again later
+    aiNoResponse: AI service did not respond, using original text
+    translatedExportFailed: Failed to generate translated subtitles
+    translatedExportIncomplete: Failed to translate all subtitle lines
+    translatedExportSameLanguage: Source and target languages are the same
+hostedAi:
+  ultraBadge:
+    tooltip: Requires the Ultra plan · Click the badge to get it
+  availability:
+    authenticationRequired: Log in to use this provider
+    ultraRequired: Ultra plan required
+    quotaExhausted: Quota used up
+    serviceUnavailable: Temporarily unavailable
+    usedPercent: "Quota used: $1%"
+    resetsAt: "Resets at $1"
+  errors:
+    rateLimited: Too many requests, please try again later.
+    guestRateLimited: Too many guest requests. Please try again later.
+    userRateLimited: Too many requests. Please try again later.
+hotkey:
+  control: Ctrl
+  alt: Option
+  shift: Shift
+  backtick: Backtick
+  clickAndHold: Click and hold
+translationHub:
+  searchLanguages: Search languages...
+  noLanguagesFound: No languages found
+  exchangeLanguages: Exchange languages
+  title: Multi-API Text Translation
+  noServicesSelected: No Translation Services Selected
+  noServicesDescription: Select translation services above to see translation cards here.
+  inputPlaceholder: Enter text to translate...
+  translate: Translate
+  copiedToClipboard: Translation copied to clipboard!
+  copyTranslation: Copy translation
+  expandCard: Expand card
+  collapseCard: Collapse card
+  expandAllCards: Expand all
+  collapseAllCards: Collapse all
+  deleteCard: Delete card
+  translationFailed: Translation Failed
+  translationFailedFallback: Translation failed
+  retryTranslation: Retry translation
+languages:
+  eng: English
+  cmn: Simplified Chinese
+  cmnHant: Traditional Chinese
+  yue: Cantonese
+  spa: Spanish
+  rus: Russian
+  arb: Arabic
+  ben: Bengali
+  hin: Hindi
+  por: Portuguese
+  ind: Indonesian
+  jpn: Japanese
+  fra: French
+  deu: German
+  jav: Javanese
+  kor: Korean
+  tel: Telugu
+  vie: Vietnamese
+  mar: Marathi
+  ita: Italian
+  tam: Tamil
+  tur: Turkish
+  urd: Urdu
+  guj: Gujarati
+  pol: Polish
+  ukr: Ukrainian
+  kan: Kannada
+  mai: Maithili
+  mal: Malayalam
+  pes: Persian
+  mya: Burmese
+  swh: Swahili
+  sun: Sundanese
+  ron: Romanian
+  pan: Punjabi
+  bho: Bhojpuri
+  amh: Amharic
+  hau: Hausa
+  fuv: Fulani
+  bos: Bosnian
+  hrv: Croatian
+  nld: Dutch
+  srp: Serbian
+  tha: Thai
+  ckb: Central Kurdish
+  yor: Yoruba
+  uzn: Uzbek
+  zlm: Malay
+  ibo: Igbo
+  npi: Nepali
+  ceb: Cebuano
+  skr: Saraiki
+  tgl: Tagalog
+  hun: Hungarian
+  azj: Azerbaijani
+  sin: Sinhala
+  koi: Komi-Permyak
+  ell: Greek
+  ces: Czech
+  mag: Magahi
+  run: Rundi
+  bel: Belarusian
+  plt: Malagasy
+  qug: Chimborazo Highland Quichua
+  mad: Madurese
+  nya: Chewa
+  zyb: Zhuang
+  pbu: Pashto
+  kin: Kinyarwanda
+  zul: Zulu
+  bul: Bulgarian
+  swe: Swedish
+  lin: Lingala
+  som: Somali
+  hms: Qiandong Miao
+  hnj: Hmong Njua
+  ilo: Ilocano
+  kaz: Kazakh
+  heb: Hebrew
+  nob: Norwegian Bokmål
+  nno: Norwegian Nynorsk
+  afr: Afrikaans
+  sqi: Albanian
+  asm: Assamese
+  eus: Basque
+  bre: Breton
+  cat: Catalan
+  cos: Corsican
+  cym: Welsh
+  dan: Danish
+  div: Divehi
+  epo: Esperanto
+  ekk: Estonian
+  fao: Faroese
+  fij: Fijian
+  fin: Finnish
+  fry: Western Frisian
+  gla: Scottish Gaelic
+  gle: Irish
+  glg: Galician
+  grn: Guarani
+  hat: Haitian Creole
+  haw: Hawaiian
+  hye: Armenian
+  ido: Ido
+  ina: Interlingua
+  isl: Icelandic
+  kat: Georgian
+  khm: Khmer
+  kir: Kyrgyz
+  lao: Lao
+  lat: Latin
+  lvs: Latvian
+  lit: Lithuanian
+  ltz: Luxembourgish
+  mkd: Macedonian
+  mlt: Maltese
+  mon: Mongolian
+  mri: Maori
+  nso: Northern Sotho
+  oci: Occitan
+  ori: Odia
+  orm: Oromo
+  prs: Dari
+  san: Sanskrit
+  slk: Slovak
+  slv: Slovenian
+  smo: Samoan
+  sna: Shona
+  snd: Sindhi
+  sot: Southern Sotho
+  tah: Tahitian
+  tat: Tatar
+  tgk: Tajik
+  tir: Tigrinya
+  ton: Tongan
+  tsn: Tswana
+  tuk: Turkmen
+  uig: Uyghur
+  vol: Volapük
+  wol: Wolof
+  xho: Xhosa
+  ydd: Yiddish
+  aka: Akan
+  bam: Bambara
+  bis: Bislama
+  bod: Tibetan
+  che: Chechen
+  chv: Chuvash
+  dzo: Dzongkha
+  ewe: Ewe
+  kab: Kabyle
+  lug: Luganda
+  oss: Ossetian
+  ssw: Swati
+  ven: Venda
+  war: Waray
+  nde: Northern Ndebele
+  nbl: Southern Ndebele
+  pam: Pampanga
+  hil: Hiligaynon
+  bcl: Central Bicolano
+  min: Minangkabau
+  ace: Acehnese
+  bug: Buginese
+  ban: Balinese
+  bjn: Banjar
+  mak: Makasar
+  sas: Sasak
+  tet: Tetum
+  cha: Chamorro
+  niu: Niuean
+  tvl: Tuvaluan
+  gil: Gilbertese
+  mah: Marshallese
+  pau: Palauan
+  wls: Wallisian
+  rar: Rarotongan
+  hif: Fiji Hindi

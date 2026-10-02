@@ -1,0 +1,9 @@
+Icons bundled using better-icons on 2026-09-12 from Iconify.
+Collections: fa7-brands, garden, logos, mdi, ri, streamline-logos, tabler
+Tabler Icons MIT: https://github.com/tabler/tabler-icons/blob/main/LICENSE
+Material Design Icons Apache-2.0: https://github.com/Templarian/MaterialDesign
+Remix Icons Apache-2.0: https://github.com/Remix-Design/RemixIcon
+Logos CC0-1.0: https://github.com/gilbarbara/logos
+Garden Apache-2.0: https://github.com/zendeskgarden/svg-icons
+Font Awesome and Streamline logos CC-BY-4.0. Brand marks remain their owners’ marks.
+LiveLearn app icon is a pre-existing workspace asset: Assets/Brand/app-icon.png.

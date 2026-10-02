@@ -1,0 +1,659 @@
+import type { TextSplitRecord } from "../../core/translation-state"
+// @vitest-environment jsdom
+import type { Config } from "@/types/config/config"
+import { beforeEach, describe, expect, it } from "vitest"
+import { DEFAULT_CONFIG } from "@/utils/constants/config"
+import { CONTENT_WRAPPER_CLASS } from "@/utils/constants/dom-labels"
+import { walkAndLabelElement } from "@/utils/host/dom/traversal"
+import {
+  buildVirtualParagraphPlan,
+  buildVirtualParagraphUnits,
+  canMaterializeVirtualParagraphUnits,
+  canSplitParagraphIntoDescendants,
+  liftParagraphInsertionBoundary,
+  moveParagraphInsertionBoundaryAfterTrailingInlineImages,
+  type DOMBoundary,
+} from "../paragraph-segmentation"
+import { materializeVirtualParagraphUnitRuns } from "../virtual-paragraph-insertion"
+
+function setHost(host: string): void {
+  Object.defineProperty(window, "location", {
+    value: new URL(`https://${host}/some/path`),
+    writable: true,
+    configurable: true,
+  })
+}
+
+function createRoot(whiteSpace: string = "pre-wrap"): HTMLDivElement {
+  const root = document.createElement("div")
+  root.style.whiteSpace = whiteSpace
+  return root
+}
+
+function configWithSiteRule(rule: NonNullable<Config["siteRules"]>["userRules"][number]): Config {
+  const config = structuredClone(DEFAULT_CONFIG)
+  config.siteRules = {
+    userRules: [rule],
+    disabledBuiltInRules: [],
+  }
+  return config
+}
+
+function insertAtBoundary(boundary: DOMBoundary, marker: HTMLElement): void {
+  if (boundary.container.nodeType === Node.TEXT_NODE) {
+    const text = boundary.container as Text
+    const tail = text.splitText(boundary.offset)
+    tail.parentNode?.insertBefore(marker, tail)
+    return
+  }
+
+  boundary.container.insertBefore(marker, boundary.container.childNodes[boundary.offset] ?? null)
+}
+
+beforeEach(() => {
+  setHost("paragraph.example")
+})
+
+describe("buildVirtualParagraphUnits", () => {
+  it.each(["pre", "pre-wrap", "pre-line", "break-spaces"])(
+    "segments literal blank lines for white-space: %s",
+    (whiteSpace) => {
+      const root = createRoot(whiteSpace)
+      root.textContent = "First paragraph\n\nSecond paragraph"
+
+      const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+      expect(units.map(({ id, text }) => ({ id, text }))).toEqual([
+        { id: 0, text: "First paragraph" },
+        { id: 1, text: "Second paragraph" },
+      ])
+    },
+  )
+
+  it.each(["normal", "nowrap"])(
+    "preserves the legacy single-unit path for white-space: %s",
+    (whiteSpace) => {
+      const root = createRoot(whiteSpace)
+      root.textContent = "First paragraph\n\nSecond paragraph"
+
+      expect(buildVirtualParagraphUnits(root, DEFAULT_CONFIG)).toEqual([])
+    },
+  )
+
+  it("does not split a single preserved newline", () => {
+    const root = createRoot()
+    root.textContent = "#MLB\n#Redsox"
+
+    expect(buildVirtualParagraphUnits(root, DEFAULT_CONFIG)).toEqual([])
+  })
+
+  it("keeps a single newline inside a paragraph split by a blank line", () => {
+    const root = createRoot()
+    root.textContent = "Score\n\n#MLB\n#Redsox"
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["Score", "#MLB\n#Redsox"])
+  })
+
+  it("accepts CRLF delimiters with horizontal whitespace", () => {
+    const root = createRoot()
+    root.textContent = "First\r\n \t\r\nSecond"
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["First", "Second"])
+  })
+
+  it("recognizes a delimiter that crosses Text nodes", () => {
+    const root = createRoot()
+    const firstText = document.createTextNode("First\n")
+    const span = document.createElement("span")
+    const secondText = document.createTextNode("\nSecond")
+    span.appendChild(secondText)
+    root.append(firstText, span)
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["First", "Second"])
+    expect(units[0]!.insertionBoundary).toEqual({ container: firstText, offset: 5 })
+    expect(units[1]!.sourceFragments).toEqual([
+      { source: secondText, startOffset: 1, endOffset: 7, atomic: false },
+    ])
+  })
+
+  it("places the final virtual paragraph after trailing inline images with alt text", () => {
+    const root = createRoot()
+    const source = document.createElement("span")
+    source.textContent = "First paragraph\n\nSecond paragraph"
+    const emojiImages = ["✡️", "✝️", "🙏🏻", "♥️"].map((alt) => {
+      const image = document.createElement("img")
+      image.alt = alt
+      image.style.display = "inline-block"
+      return image
+    })
+    root.append(
+      source,
+      " ",
+      emojiImages[0]!,
+      "\t",
+      emojiImages[1]!,
+      "  ",
+      emojiImages[2]!,
+      emojiImages[3]!,
+      " ",
+    )
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["First paragraph", "Second paragraph"])
+    expect(units[1]!.insertionBoundary).toEqual({
+      container: root,
+      offset: root.childNodes.length,
+    })
+    expect(
+      units.flatMap((unit) => unit.sourceFragments).map((fragment) => fragment.source),
+    ).not.toEqual(expect.arrayContaining(emojiImages))
+  })
+
+  it.each([
+    {
+      label: "a block image",
+      createTrailingNode: () => {
+        const image = document.createElement("img")
+        image.alt = "♥️"
+        image.style.display = "block"
+        return image
+      },
+    },
+    {
+      label: "an inline image without alt text",
+      createTrailingNode: () => {
+        const image = document.createElement("img")
+        image.style.display = "inline-block"
+        return image
+      },
+    },
+    {
+      label: "an inline SVG",
+      createTrailingNode: () => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+        svg.style.display = "inline-block"
+        return svg
+      },
+    },
+    {
+      label: "a hidden inline image",
+      createTrailingNode: () => {
+        const image = document.createElement("img")
+        image.alt = "♥️"
+        image.style.display = "inline-block"
+        image.style.visibility = "hidden"
+        return image
+      },
+    },
+  ])("does not move the final boundary past $label", ({ createTrailingNode }) => {
+    const root = createRoot()
+    const source = document.createElement("span")
+    source.textContent = "First paragraph\n\nSecond paragraph"
+    root.append(source, createTrailingNode())
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units[1]!.insertionBoundary).toEqual({ container: root, offset: 1 })
+  })
+
+  it("does not move a paragraph boundary past a trailing control", () => {
+    const root = createRoot()
+    const source = document.createElement("span")
+    source.textContent = "Paragraph"
+    const button = document.createElement("button")
+    button.textContent = "Show more"
+    root.append(source, button)
+
+    expect(
+      moveParagraphInsertionBoundaryAfterTrailingInlineImages(
+        { container: source, offset: source.childNodes.length },
+        root,
+      ),
+    ).toEqual({ container: source, offset: source.childNodes.length })
+  })
+
+  it.each([
+    ["a newline", "\n"],
+    ["real text", "next paragraph"],
+  ])("does not move a paragraph boundary past %s", (_label, trailingText) => {
+    const root = createRoot()
+    const source = document.createElement("span")
+    source.textContent = "Paragraph"
+    root.append(source, document.createTextNode(trailingText))
+    const originalBoundary = { container: source, offset: source.childNodes.length }
+
+    expect(moveParagraphInsertionBoundaryAfterTrailingInlineImages(originalBoundary, root)).toEqual(
+      originalBoundary,
+    )
+  })
+
+  it("keeps a preserve-text mention atomic inside its surrounding paragraph", () => {
+    setHost("preserve.example")
+    const config = configWithSiteRule({
+      id: "preserve",
+      matches: "preserve.example",
+      preserveTextSelectors: ["a.mention"],
+    })
+    const root = createRoot()
+    const before = document.createTextNode("Today we welcome ")
+    const mention = document.createElement("a")
+    mention.className = "mention"
+    mention.textContent = "@SohunSanka"
+    const after = document.createTextNode(" as our new head of GTM.\n\nNext paragraph")
+    root.append(before, mention, after)
+
+    const units = buildVirtualParagraphUnits(root, config)
+
+    expect(units.map((unit) => unit.text)).toEqual([
+      "Today we welcome @SohunSanka as our new head of GTM.",
+      "Next paragraph",
+    ])
+    expect(units[0]!.sourceFragments).toEqual([
+      { source: before, startOffset: 0, endOffset: 17, atomic: false },
+      { source: mention, startOffset: 0, endOffset: 11, atomic: true },
+      { source: after, startOffset: 0, endOffset: 24, atomic: false },
+    ])
+  })
+
+  it("does not interpret blank lines inside a dont-walk element as delimiters", () => {
+    const root = createRoot()
+    const code = document.createElement("code")
+    code.textContent = "literal\n\nvalue"
+    root.append("Before ", code, "\n\nAfter")
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["Before literal\n\nvalue", "After"])
+    expect(units[0]!.sourceFragments[1]).toEqual({
+      source: code,
+      startOffset: 0,
+      endOffset: 14,
+      atomic: true,
+    })
+  })
+
+  it("skips translated wrappers without joining newlines across the skipped subtree", () => {
+    const root = createRoot()
+    const wrapper = document.createElement("span")
+    wrapper.className = CONTENT_WRAPPER_CLASS
+    wrapper.textContent = "already translated"
+    root.append("One\n", wrapper, "\nTwo\n\nThree")
+
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    expect(units.map((unit) => unit.text)).toEqual(["One\n\nTwo", "Three"])
+    expect(
+      units.flatMap((unit) => unit.sourceFragments).some((fragment) => fragment.source === wrapper),
+    ).toBe(false)
+  })
+
+  it("skips site-rule-excluded subtrees without joining newlines across them", () => {
+    setHost("exclude.example")
+    const config = configWithSiteRule({
+      id: "exclude",
+      matches: "exclude.example",
+      excludeSelectors: [".skip"],
+    })
+    const root = createRoot()
+    const excluded = document.createElement("span")
+    excluded.className = "skip"
+    excluded.textContent = "visible but excluded"
+    root.append("One\n", excluded, "\nTwo\n\nThree")
+
+    const units = buildVirtualParagraphUnits(root, config)
+
+    expect(units.map((unit) => unit.text)).toEqual(["One\n\nTwo", "Three"])
+    expect(units.map((unit) => unit.text).join(" ")).not.toContain("visible but excluded")
+  })
+
+  it("lifts a terminal preserve-text anchor boundary to the logical source", () => {
+    setHost("preserve.example")
+    const config = configWithSiteRule({
+      id: "preserve",
+      matches: "preserve.example",
+      preserveTextSelectors: ["a.mention"],
+    })
+    const root = createRoot()
+    const leading = document.createTextNode("First\n\n")
+    const span = document.createElement("span")
+    const mention = document.createElement("a")
+    mention.className = "mention"
+    mention.textContent = "@SohunSanka"
+    span.appendChild(mention)
+    root.append(leading, span)
+
+    const units = buildVirtualParagraphUnits(root, config)
+
+    expect(units[1]!.insertionBoundary).toEqual({ container: root, offset: 2 })
+  })
+
+  it("lifts a boundary out of a terminal BUTTON even when excluded children follow its text", () => {
+    const root = createRoot()
+    const button = document.createElement("button")
+    const text = document.createTextNode("Share")
+    const icon = document.createElement("svg")
+    button.append(text, icon)
+    root.appendChild(button)
+
+    const boundary = liftParagraphInsertionBoundary(
+      { container: text, offset: text.data.length },
+      root,
+      DEFAULT_CONFIG,
+    )
+
+    expect(boundary).toEqual({ container: root, offset: 1 })
+  })
+
+  it("returns boundaries that support reverse splitText insertion", () => {
+    const root = createRoot()
+    const source = document.createTextNode("One\n\nTwo\n\nThree")
+    root.appendChild(source)
+    const units = buildVirtualParagraphUnits(root, DEFAULT_CONFIG)
+
+    for (const unit of [...units].reverse()) {
+      const marker = document.createElement("i")
+      marker.dataset.paragraphId = String(unit.id)
+      insertAtBoundary(unit.insertionBoundary, marker)
+    }
+
+    expect([...root.childNodes].map((node) => node.textContent)).toEqual([
+      "One",
+      "",
+      "\n\nTwo",
+      "",
+      "\n\nThree",
+      "",
+    ])
+    expect([...root.querySelectorAll("i")].map((node) => node.dataset.paragraphId)).toEqual([
+      "0",
+      "1",
+      "2",
+    ])
+  })
+})
+
+describe("canSplitParagraphIntoDescendants", () => {
+  function walkedFixture(markup: string, whiteSpace: string): HTMLElement {
+    const root = createRoot(whiteSpace)
+    root.innerHTML = markup
+    document.body.appendChild(root)
+    walkAndLabelElement(root, "walk-split", DEFAULT_CONFIG)
+    return root
+  }
+
+  // Regression shape: https://x.com/davidjpark96/status/1789773192435060737 —
+  // a 22k-char note tweet whose pre-wrap tweetText div holds sibling inline
+  // spans (bold headings as their own spans); splitting observed each span as
+  // an independent unit and destroyed the blank-line paragraph interleaving.
+  it("refuses to split a pre-wrap flow into inline span paragraphs (X note tweet)", () => {
+    const root = walkedFixture(
+      "<span>First paragraph\n\nSecond paragraph</span><span>Bold heading</span>",
+      "pre-wrap",
+    )
+    const spans = [...root.querySelectorAll("span")]
+
+    expect(canSplitParagraphIntoDescendants(root, spans, DEFAULT_CONFIG)).toBe(false)
+  })
+
+  it("allows splitting a pre-wrap container into block paragraphs", () => {
+    const root = walkedFixture(
+      "<div>First message paragraph</div><div>Second message paragraph</div>",
+      "pre-wrap",
+    )
+    const divs = [...root.querySelectorAll("div")]
+
+    expect(canSplitParagraphIntoDescendants(root, divs, DEFAULT_CONFIG)).toBe(true)
+  })
+
+  it("allows splitting a normal white-space container into inline paragraphs (#1881)", () => {
+    const root = walkedFixture(
+      "<span>First flat segment</span><span>Second flat segment</span>",
+      "normal",
+    )
+    const spans = [...root.querySelectorAll("span")]
+
+    expect(canSplitParagraphIntoDescendants(root, spans, DEFAULT_CONFIG)).toBe(true)
+  })
+
+  it("allows splitting a pre-wrap flow with mixed block and inline paragraphs", () => {
+    // With a block descendant present the translation walker takes the
+    // per-child branch, so refusing the split would not reach the
+    // container-level virtual-paragraph plan — it would only lose gating.
+    const root = walkedFixture(
+      "<div>Block paragraph</div><span>Inline segment\n\nwith blank line</span>",
+      "pre-wrap",
+    )
+    const children = [...root.children] as HTMLElement[]
+
+    expect(canSplitParagraphIntoDescendants(root, children, DEFAULT_CONFIG)).toBe(true)
+  })
+
+  it("allows splitting a pre-wrap flow whose text has no blank-line delimiters", () => {
+    // A single-newline-only giant (log/code views) yields an EMPTY virtual
+    // plan; refusing the split would translate the whole giant as ONE
+    // request and forfeit viewport gating.
+    const root = walkedFixture(
+      "<span>line one\nline two</span><span>line three\nline four</span>",
+      "pre-wrap",
+    )
+    const spans = [...root.querySelectorAll("span")]
+
+    expect(canSplitParagraphIntoDescendants(root, spans, DEFAULT_CONFIG)).toBe(true)
+  })
+
+  describe("translation only mode", () => {
+    const TRANSLATION_ONLY_CONFIG: Config = {
+      ...DEFAULT_CONFIG,
+      pageTranslation: { ...DEFAULT_CONFIG.pageTranslation, mode: "translationOnly" },
+    }
+
+    it("refuses the split when the units can be cut into whole nodes", () => {
+      // Observed whole, the container-level plan gives one request per
+      // paragraph; split per span, the blank-line structure is lost.
+      const root = walkedFixture(
+        "<span>First paragraph</span>\n\n<span>Second paragraph</span>",
+        "pre-wrap",
+      )
+      const spans = [...root.querySelectorAll("span")]
+
+      expect(canSplitParagraphIntoDescendants(root, spans, TRANSLATION_ONLY_CONFIG)).toBe(false)
+    })
+
+    it("keeps per-span observation when the blank lines sit inside a span", () => {
+      // The X note tweet: translationOnly cannot cut a unit out of a span, so
+      // observing the container whole would only cost it the granularity and
+      // the viewport gating it has today.
+      const root = walkedFixture(
+        "<span>First paragraph\n\nSecond paragraph</span><span>Bold heading</span>",
+        "pre-wrap",
+      )
+      const spans = [...root.querySelectorAll("span")]
+
+      expect(canSplitParagraphIntoDescendants(root, spans, TRANSLATION_ONLY_CONFIG)).toBe(true)
+      // Bilingual can interleave a wrapper at any boundary, so it still
+      // refuses the split for the very same container.
+      expect(canSplitParagraphIntoDescendants(root, spans, DEFAULT_CONFIG)).toBe(false)
+    })
+  })
+})
+
+describe("virtual paragraph unit runs", () => {
+  function planFixture(
+    build: (root: HTMLElement) => void,
+    config: Config = DEFAULT_CONFIG,
+    whiteSpace: string = "pre-wrap",
+  ) {
+    const root = createRoot(whiteSpace)
+    build(root)
+    document.body.appendChild(root)
+    const plan = buildVirtualParagraphPlan(root, config)
+    return { root, plan }
+  }
+
+  describe("canMaterializeVirtualParagraphUnits", () => {
+    it("accepts blank lines in a top-level text node (plain-text document)", () => {
+      // A text/plain page is exactly this: one Text node holding the file.
+      const { root, plan } = planFixture((node) => {
+        node.textContent = "One\n\nTwo\n\nThree"
+      })
+
+      expect(plan.units).toHaveLength(3)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(true)
+    })
+
+    it("accepts units delimited between elements by a top-level blank line", () => {
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = "<span>First paragraph</span>\n\n<span><b>Bold</b> heading</span>"
+      })
+
+      expect(plan.units).toHaveLength(2)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(true)
+    })
+
+    it("refuses blank lines nested inside an inline element (X note tweet)", () => {
+      // https://x.com/davidjpark96/status/1789773192435060737 — cutting a unit
+      // out here would mean splitting the span and its styling apart.
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = "<span>First paragraph\n\nSecond paragraph</span><span>Bold heading</span>"
+      })
+
+      expect(plan.units).toHaveLength(2)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(false)
+    })
+
+    it("refuses a unit that ends inside a span with the delimiter trailing it", () => {
+      // X "show more" shape: the expanded span keeps the blank line at its end
+      // and the next paragraph arrives as top-level anchors.
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = "<span>Opening line.</span><span>\nMore text.\n\n</span>"
+        node.append(Object.assign(document.createElement("a"), { textContent: "#Football" }))
+      })
+
+      expect(plan.units.length).toBeGreaterThanOrEqual(2)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(false)
+    })
+
+    it("refuses a delimiter that crosses an element boundary", () => {
+      // Half the blank line is top-level, half lives inside the span.
+      const { root, plan } = planFixture((node) => {
+        node.append(document.createTextNode("First\n"))
+        const span = document.createElement("span")
+        span.textContent = "\nSecond"
+        node.append(span)
+      })
+
+      expect(plan.units).toHaveLength(2)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(false)
+    })
+
+    it("refuses a unit whose range contains a textless element", () => {
+      // The image contributes no text, so shipping it inside the request would
+      // make alignment depend on the provider echoing the tag back.
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML =
+          '<span>First</span><img alt="emoji" src="e.svg"><span>still first</span>\n\n<span>Second</span>'
+      })
+
+      expect(plan.units).toHaveLength(2)
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(false)
+    })
+
+    it("keeps a textless element between units out of every unit", () => {
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = '<span>First</span><img alt="emoji" src="e.svg">\n\n<span>Second</span>'
+      })
+
+      expect(canMaterializeVirtualParagraphUnits(root, plan, DEFAULT_CONFIG)).toBe(true)
+
+      const runs = materializeVirtualParagraphUnitRuns(root, plan, DEFAULT_CONFIG)!
+      expect(runs).toHaveLength(2)
+      expect(runs.flatMap((run) => run.nodes)).not.toContain(root.querySelector("img"))
+    })
+  })
+
+  describe("materializeVirtualParagraphUnitRuns", () => {
+    it("cuts a top-level text node into one run per paragraph", () => {
+      const { root, plan } = planFixture((node) => {
+        node.textContent = "One\n\nTwo\n\nThree"
+      })
+      const source = root.firstChild as Text
+      const splitRecords: TextSplitRecord[] = []
+
+      const runs = materializeVirtualParagraphUnitRuns(root, plan, DEFAULT_CONFIG, splitRecords)!
+
+      expect(runs.map((run) => run.nodes.map((node) => node.textContent).join(""))).toEqual([
+        "One",
+        "Two",
+        "Three",
+      ])
+      // The delimiters stay in their own nodes, outside every run.
+      expect(root.textContent).toBe("One\n\nTwo\n\nThree")
+      expect([...root.childNodes].map((node) => node.textContent)).toEqual([
+        "One",
+        "\n\n",
+        "Two",
+        "\n\n",
+        "Three",
+      ])
+      // One record for the one source node, tails in final DOM order.
+      expect(splitRecords).toHaveLength(1)
+      expect(splitRecords[0]!.source).toBe(source)
+      expect(splitRecords[0]!.originalValue).toBe("One\n\nTwo\n\nThree")
+      expect(splitRecords[0]!.createdTails.map((tail) => tail.data)).toEqual([
+        "\n\n",
+        "Two",
+        "\n\n",
+        "Three",
+      ])
+      expect(splitRecords[0]!.sourceValueAfterSplit).toBe("One")
+    })
+
+    it("returns element runs without cutting anything", () => {
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = "<span>First paragraph</span>\n\n<span><b>Bold</b> heading</span>"
+      })
+      const spans = [...root.querySelectorAll("span")]
+      const splitRecords: TextSplitRecord[] = []
+
+      const runs = materializeVirtualParagraphUnitRuns(root, plan, DEFAULT_CONFIG, splitRecords)!
+
+      expect(runs.map((run) => run.nodes)).toEqual([[spans[0]], [spans[1]]])
+      expect(splitRecords).toHaveLength(0)
+      // Element identity is untouched, so the rich-text markup survives.
+      expect(root.querySelector("b")?.textContent).toBe("Bold")
+    })
+
+    it("keeps runs disjoint when one unit starts mid-node and ends at an element", () => {
+      const { root, plan } = planFixture((node) => {
+        node.append(document.createTextNode("First\n\nSecond "))
+        const span = document.createElement("span")
+        span.textContent = "tail"
+        node.append(span)
+      })
+
+      const runs = materializeVirtualParagraphUnitRuns(root, plan, DEFAULT_CONFIG)!
+
+      expect(runs).toHaveLength(2)
+      expect(runs[0]!.nodes.map((node) => node.textContent)).toEqual(["First"])
+      expect(runs[1]!.nodes.map((node) => node.textContent)).toEqual(["Second ", "tail"])
+      expect(new Set(runs.flatMap((run) => run.nodes)).size).toBe(3)
+      expect(root.textContent).toBe("First\n\nSecond tail")
+    })
+
+    it("returns null for a plan it cannot express as whole nodes", () => {
+      const { root, plan } = planFixture((node) => {
+        node.innerHTML = "<span>First paragraph\n\nSecond paragraph</span>"
+      })
+
+      expect(materializeVirtualParagraphUnitRuns(root, plan, DEFAULT_CONFIG)).toBeNull()
+      expect(root.innerHTML).toBe("<span>First paragraph\n\nSecond paragraph</span>")
+    })
+  })
+})

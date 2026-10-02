@@ -1,0 +1,132 @@
+import type { VersionTestData } from "../example/types"
+import { assert, describe, expect, it } from "vitest"
+import { configSchema } from "@/types/config/config"
+import { CONFIG_SCHEMA_VERSION } from "@/utils/constants/config"
+import { logger } from "@/utils/logger"
+import {
+  LATEST_SCHEMA_VERSION,
+  migrateConfig,
+  migrationScripts,
+  runMigration,
+} from "../../migration"
+import { testSeries as v001TestSeries } from "../example/v001"
+
+describe("all Config Migrations", () => {
+  it("migrates a complete v001 config through the full chain to the latest schema", async () => {
+    const migrated = await migrateConfig(structuredClone(v001TestSeries.default!.config), 1)
+
+    expect(configSchema.safeParse(migrated).success).toBe(true)
+    // v095 moved the page-translation surface to its hosted-AI feature name.
+    expect("translate" in migrated).toBe(false)
+    expect(typeof migrated.pageTranslation.providerId).toBe("string")
+  })
+
+  it("should have the valid latest schema version", async () => {
+    expect(LATEST_SCHEMA_VERSION).toBeDefined()
+    expect(typeof LATEST_SCHEMA_VERSION).toBe("number")
+    expect(LATEST_SCHEMA_VERSION).toBe(CONFIG_SCHEMA_VERSION)
+
+    const maxKey = Math.max(...Object.keys(migrationScripts).map(Number))
+    expect(maxKey).toBe(LATEST_SCHEMA_VERSION)
+
+    const latestVersionStr = String(LATEST_SCHEMA_VERSION).padStart(3, "0")
+    const latestExampleModule = (await import(
+      `../example/v${latestVersionStr}.ts`
+    )) as VersionTestData
+
+    // Test all configs in the test series
+    for (const [seriesId, seriesData] of Object.entries(latestExampleModule.testSeries)) {
+      const parseResult = configSchema.safeParse(seriesData.config)
+      if (!parseResult.success) {
+        console.error(
+          `Schema validation failed for series "${seriesId}":`,
+          parseResult.error.issues,
+        )
+      }
+      expect(parseResult.success).toBe(true)
+    }
+  })
+
+  it("should have migration scripts for all versions", async () => {
+    for (let version = 2; version <= LATEST_SCHEMA_VERSION; version++) {
+      expect(migrationScripts[version]).toBeDefined()
+      expect(typeof migrationScripts[version]).toBe("function")
+    }
+  })
+
+  // 自动测试从版本2到最新版本的所有迁移
+  for (let version = 2; version <= LATEST_SCHEMA_VERSION; version++) {
+    const fromVersion = version - 1
+    const toVersion = version
+
+    it(`should migrate config from v${fromVersion} to v${toVersion}`, async () => {
+      try {
+        // 动态导入对应版本的配置示例（明确指定 .ts 扩展名）
+        const fromVersionStr = String(fromVersion).padStart(3, "0")
+        const toVersionStr = String(toVersion).padStart(3, "0")
+
+        const oldConfigModule = (await import(
+          `../example/v${fromVersionStr}.ts`
+        )) as VersionTestData
+        const newConfigModule = (await import(`../example/v${toVersionStr}.ts`)) as VersionTestData
+
+        // All version files now use testSeries structure
+        let seriesProcessed = 0
+        const migrationResults: Array<{ actual: unknown; expected: unknown }> = []
+
+        for (const [seriesId, oldSeriesData] of Object.entries(oldConfigModule.testSeries)) {
+          const newSeriesData = newConfigModule.testSeries[seriesId]
+          if (newSeriesData) {
+            // Execute migration for this series
+            const actualNewConfig = await runMigration(toVersion, oldSeriesData.config)
+
+            migrationResults.push({ actual: actualNewConfig, expected: newSeriesData.config })
+
+            seriesProcessed++
+
+            // Output success info in verbose mode
+            if (process.env.VITEST_VERBOSE) {
+              logger.info(
+                `✓ Migration v${fromVersion} -> v${toVersion} [${seriesId}]: ${oldSeriesData.description}`,
+              )
+            }
+          } else {
+            // Series doesn't exist in new version - skip migration test for this series
+            if (process.env.VITEST_VERBOSE) {
+              logger.info(`⚠ Skipping series "${seriesId}" - not present in v${toVersion}`)
+            }
+          }
+        }
+
+        // Validate migration results
+        migrationResults.forEach(({ actual, expected }) => {
+          expect(actual).toEqual(expected)
+        })
+
+        // Ensure at least one series was tested
+        expect(
+          seriesProcessed,
+          `No test series found for migration v${fromVersion} -> v${toVersion}`,
+        ).toBeGreaterThan(0)
+      } catch (error) {
+        // 如果找不到对应的示例文件，标记为跳过
+        const isMissingExampleFile =
+          error instanceof Error &&
+          (error.message.includes("Cannot resolve module") ||
+            error.message.includes("Failed to resolve import"))
+
+        if (!isMissingExampleFile) {
+          // 其他错误重新抛出
+          console.error(`❌ Migration test failed v${fromVersion} -> v${toVersion}:`, error)
+          throw error
+        }
+
+        console.warn(
+          `⚠ Skipping migration test v${fromVersion} -> v${toVersion}: Missing example files`,
+        )
+        // 使用 skip 而不是直接 return，这样测试报告会显示跳过的测试
+        assert.isTrue(isMissingExampleFile)
+      }
+    })
+  }
+})

@@ -1,0 +1,133 @@
+import type { MigrationFunction } from "./migration-scripts/types"
+import type { Config } from "@/types/config/config"
+import { configSchema } from "@/types/config/config"
+import { i18n } from "@/utils/i18n"
+import { CONFIG_SCHEMA_VERSION } from "../constants/config"
+import { logger } from "../logger"
+import { ConfigVersionTooNewError } from "./errors"
+
+export const LATEST_SCHEMA_VERSION = CONFIG_SCHEMA_VERSION
+
+const MIGRATION_FILENAME_RE = /v(\d+)-to-v(\d+)\.ts$/
+
+interface MigrationStep {
+  fromVersion: number
+  toVersion: number
+  path: string
+  migrate: MigrationFunction
+}
+
+/**
+ * Build a target-version-indexed migration registry while validating that the
+ * auto-discovered files form exactly one contiguous, single-version chain.
+ */
+export function buildMigrationRegistry(
+  discoveredModules: Record<string, MigrationFunction>,
+  firstVersion: number,
+  latestVersion: number,
+): Record<number, MigrationFunction> {
+  const steps: MigrationStep[] = Object.entries(discoveredModules).map(([path, migrate]) => {
+    const match = path.match(MIGRATION_FILENAME_RE)
+    if (!match) {
+      throw new Error(`Invalid migration filename: ${path}`)
+    }
+
+    const fromVersion = Number(match[1])
+    const toVersion = Number(match[2])
+    if (toVersion !== fromVersion + 1) {
+      throw new Error(
+        `Invalid migration step ${path}: expected v${fromVersion} to migrate to v${fromVersion + 1}`,
+      )
+    }
+
+    return { fromVersion, toVersion, path, migrate }
+  })
+
+  if (steps.length === 0) {
+    throw new Error("No config migration scripts found")
+  }
+
+  const targetVersions = new Set<number>()
+  for (const step of steps) {
+    if (targetVersions.has(step.toVersion)) {
+      throw new Error(`Duplicate migration target version: v${step.toVersion}`)
+    }
+    targetVersions.add(step.toVersion)
+  }
+
+  steps.sort((a, b) => a.fromVersion - b.fromVersion)
+
+  if (steps[0]!.fromVersion !== firstVersion) {
+    throw new Error(
+      `Migration chain starts at v${steps[0]!.fromVersion}; expected v${firstVersion}`,
+    )
+  }
+
+  for (let index = 1; index < steps.length; index += 1) {
+    const previous = steps[index - 1]
+    const current = steps[index]
+    if (current!.fromVersion !== previous!.toVersion) {
+      throw new Error(
+        `Discontinuous migration chain between ${previous!.path} and ${current!.path}`,
+      )
+    }
+  }
+
+  const finalVersion = steps.at(-1)!.toVersion
+  if (finalVersion !== latestVersion) {
+    throw new Error(`Migration chain ends at v${finalVersion}; expected v${latestVersion}`)
+  }
+
+  return Object.fromEntries(steps.map(({ toVersion, migrate }) => [toVersion, migrate]))
+}
+
+/**
+ * Loads migration scripts from the "migration-scripts" directory and runs them sequentially to migrate the configuration
+ * from the original schema version to the latest schema version.
+ * modules : key: ./migration-scripts/v*-to-v*.ts value: migrate function
+ * migrationScripts : key: version number value: migrate function
+ */
+const modules = import.meta.glob<MigrationFunction>(["./migration-scripts/v*-to-v*.ts"], {
+  eager: true,
+  import: "migrate",
+})
+export const migrationScripts = buildMigrationRegistry(modules, 1, CONFIG_SCHEMA_VERSION)
+
+logger.log("Loaded migration modules:", migrationScripts)
+
+export async function runMigration(version: number, config: any): Promise<any> {
+  const migrationFn = migrationScripts[version]
+
+  if (!migrationFn) {
+    throw new Error(`Migration function for version ${version} not found`)
+  }
+
+  return migrationFn(config)
+}
+
+export async function migrateConfig(
+  originalConfig: unknown,
+  originalConfigSchemaVersion: number,
+): Promise<Config> {
+  if (originalConfigSchemaVersion > CONFIG_SCHEMA_VERSION) {
+    throw new ConfigVersionTooNewError(i18n.t("options.configMigration.versionTooNew"))
+  }
+
+  if (originalConfigSchemaVersion < CONFIG_SCHEMA_VERSION) {
+    let currentVersion = originalConfigSchemaVersion
+    while (currentVersion < CONFIG_SCHEMA_VERSION) {
+      const nextVersion = currentVersion + 1
+      originalConfig = await runMigration(nextVersion, originalConfig)
+      currentVersion = nextVersion
+    }
+  }
+
+  const parseResult = configSchema.safeParse(originalConfig)
+  if (!parseResult.success) {
+    throw new Error(
+      `${i18n.t("options.configMigration.validationError")}: ${parseResult.error.message}`,
+    )
+  }
+
+  return parseResult.data
+}

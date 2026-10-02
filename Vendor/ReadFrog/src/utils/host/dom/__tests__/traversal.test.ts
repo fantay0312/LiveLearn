@@ -1,0 +1,646 @@
+// @vitest-environment jsdom
+import type { SiteRule } from "@/types/config/site-rules"
+import { describe, expect, it } from "vitest"
+import { DEFAULT_CONFIG } from "@/utils/constants/config"
+import {
+  BLOCK_ATTRIBUTE,
+  INLINE_ATTRIBUTE,
+  NOTRANSLATE_CLASS,
+  PARAGRAPH_ATTRIBUTE,
+  WALKED_ATTRIBUTE,
+} from "@/utils/constants/dom-labels"
+import { isNaturalBlockTransNode, isNaturalInlineTransNode } from "../filter"
+import { extractTextContent, walkAndLabelElement } from "../traversal"
+
+function configWithSiteRule(rule: Omit<SiteRule, "id" | "matches">) {
+  const config = structuredClone(DEFAULT_CONFIG)
+  config.siteRules.userRules = [
+    {
+      id: "node-selector-test",
+      matches: window.location.hostname,
+      ...rule,
+    },
+  ]
+  return config
+}
+
+function fixture(markup: string): HTMLElement {
+  const host = document.createElement("main")
+  host.innerHTML = markup
+  document.body.append(host)
+  return host
+}
+
+describe("extractTextContent", () => {
+  describe("text node whitespace normalization", () => {
+    it("should return trimmed text without spaces when only newlines are trimmed", () => {
+      const textNode = document.createTextNode("\n\nHello\n\n")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe("Hello")
+    })
+
+    it("should add leading space when leading whitespace contains spaces", () => {
+      const textNode = document.createTextNode("  Hello")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" Hello")
+    })
+
+    it("should add trailing space when trailing whitespace contains spaces", () => {
+      const textNode = document.createTextNode("Hello  ")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe("Hello ")
+    })
+
+    it("should add both spaces when both sides have non-newline whitespace", () => {
+      const textNode = document.createTextNode("  Hello  ")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" Hello ")
+    })
+
+    it("should add spaces when whitespace includes both newlines and spaces", () => {
+      const textNode = document.createTextNode("\n  Hello  \n")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" Hello ")
+    })
+
+    it("should add leading space when leading has newline then space", () => {
+      const textNode = document.createTextNode("\n Hello")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" Hello")
+    })
+
+    it("should add trailing space when trailing has space then newline", () => {
+      const textNode = document.createTextNode("Hello \n")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe("Hello ")
+    })
+
+    it("should not add spaces for text without any whitespace", () => {
+      const textNode = document.createTextNode("Hello")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe("Hello")
+    })
+
+    it("should return single space for whitespace-only text", () => {
+      const textNode = document.createTextNode("   ")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" ")
+    })
+
+    it("should return single space for newline-only text", () => {
+      const textNode = document.createTextNode("\n\n")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" ")
+    })
+
+    it("should return single space for empty text", () => {
+      const textNode = document.createTextNode("")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" ")
+    })
+
+    it("should handle tabs as non-newline whitespace", () => {
+      const textNode = document.createTextNode("\tHello\t")
+      expect(extractTextContent(textNode, DEFAULT_CONFIG)).toBe(" Hello ")
+    })
+  })
+
+  describe("br element handling", () => {
+    it("should return newline for BR element", () => {
+      const br = document.createElement("br")
+      expect(extractTextContent(br, DEFAULT_CONFIG)).toBe("\n")
+    })
+  })
+
+  describe("nested element extraction", () => {
+    it("should extract text from nested elements", () => {
+      const div = document.createElement("div")
+      div.innerHTML = "Hello <span>World</span>"
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Hello World")
+    })
+
+    it("should handle BR in nested content", () => {
+      const div = document.createElement("div")
+      div.innerHTML = "Line1<br>Line2"
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Line1\nLine2")
+    })
+
+    it("should preserve spaces between inline elements", () => {
+      const div = document.createElement("div")
+      div.innerHTML = "<span>Hello</span> <span>World</span>"
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Hello World")
+    })
+
+    it("should include ruby text and exclude rp/rt elements", () => {
+      const div = document.createElement("div")
+      div.innerHTML = "Before<ruby>大阪<rp>(</rp><rt>Osaka</rt><rp>)</rp></ruby>After"
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Before大阪After")
+    })
+  })
+
+  describe("visually hidden element exclusion", () => {
+    it("should exclude sr-only child element text", () => {
+      const div = document.createElement("div")
+      div.innerHTML = 'Visible text<span class="sr-only">Hidden text</span>'
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Visible text")
+    })
+
+    it("should exclude visually-hidden child element text", () => {
+      const div = document.createElement("div")
+      div.innerHTML = 'Visible text<span class="visually-hidden">Hidden text</span>'
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Visible text")
+    })
+
+    it("should exclude sr-only text mixed with visible siblings", () => {
+      const div = document.createElement("div")
+      div.innerHTML = '<span>Hello</span><span class="sr-only">Secret</span> <span>World</span>'
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("Hello World")
+    })
+  })
+
+  describe("icon font exclusion", () => {
+    it("should exclude Google Symbols ligatures from surrounding page text", () => {
+      const div = document.createElement("div")
+      div.innerHTML = `
+        <span id="icon" style="font-family: 'Google Symbols'">keyboard_return</span>
+        <span>Readable text</span>
+      `
+      document.body.append(div)
+
+      walkAndLabelElement(div, "icon-font", DEFAULT_CONFIG)
+
+      const icon = div.querySelector<HTMLElement>("#icon")!
+      expect(icon).not.toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(extractTextContent(div, DEFAULT_CONFIG)).not.toContain("keyboard_return")
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toContain("Readable text")
+      div.remove()
+    })
+
+    it("should exclude common icon-font ligatures", () => {
+      const iconFonts = [
+        ["Material Icons", "expand_more"],
+        ["Material Icons Outlined", "settings"],
+        ["Material Symbols Rounded", "keyboard_return"],
+        ["FontAwesome", "house"],
+        ["Font Awesome 6 Free", "user"],
+      ]
+
+      for (const [fontFamily, ligature] of iconFonts) {
+        const div = document.createElement("div")
+        div.innerHTML = `<span id="icon">${ligature}</span>`
+        document.body.append(div)
+
+        const icon = div.querySelector<HTMLElement>("#icon")!
+        icon.style.fontFamily = `"${fontFamily}"`
+        walkAndLabelElement(div, "icon-font", DEFAULT_CONFIG)
+
+        expect(icon).not.toHaveAttribute(WALKED_ATTRIBUTE)
+        expect(extractTextContent(div, DEFAULT_CONFIG)).not.toContain(ligature)
+        div.remove()
+      }
+    })
+
+    it("should keep ordinary text when an icon font is only a fallback", () => {
+      const div = document.createElement("div")
+      div.innerHTML = '<span id="text">Readable text</span>'
+      document.body.append(div)
+
+      const text = div.querySelector<HTMLElement>("#text")!
+      text.style.fontFamily = 'Arial, "Google Symbols", sans-serif'
+      walkAndLabelElement(div, "icon-font", DEFAULT_CONFIG)
+
+      expect(text).toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toContain("Readable text")
+      div.remove()
+    })
+  })
+
+  describe("extension wrapper exclusion", () => {
+    it("should exclude translated wrapper text but keep host notranslate children (issues #1831, #249)", () => {
+      const p = document.createElement("p")
+      p.innerHTML =
+        'Host <span class="notranslate">keep</span><span class="notranslate read-frog-translated-content-wrapper">译文</span>'
+      const extracted = extractTextContent(p, DEFAULT_CONFIG)
+      expect(extracted).toContain("Host")
+      expect(extracted).toContain("keep")
+      expect(extracted).not.toContain("译文")
+    })
+
+    it("should exclude nested translated wrappers deep inside the subtree", () => {
+      const div = document.createElement("div")
+      div.innerHTML =
+        '<span>Outer</span><em>Inner<span class="read-frog-translated-content-wrapper">内层译文</span></em>'
+      expect(extractTextContent(div, DEFAULT_CONFIG)).toBe("OuterInner")
+    })
+  })
+
+  describe("replaceElement hook", () => {
+    it("substitutes the returned string for the element's whole subtree", () => {
+      const p = document.createElement("p")
+      p.innerHTML = 'Let <span class="formula"><i>x</i>+1</span> be the mean.'
+      const extracted = extractTextContent(p, DEFAULT_CONFIG, {
+        replaceElement: (element) => (element.classList.contains("formula") ? "{{0}}" : undefined),
+      })
+      expect(extracted).toBe("Let {{0}} be the mean.")
+    })
+
+    it("falls through to normal extraction when the hook returns undefined", () => {
+      const p = document.createElement("p")
+      p.innerHTML = 'Let <span class="formula"><i>x</i>+1</span> be the mean.'
+      const extracted = extractTextContent(p, DEFAULT_CONFIG, { replaceElement: () => undefined })
+      expect(extracted).toBe(extractTextContent(p, DEFAULT_CONFIG))
+    })
+
+    it("intercepts a dont-walk element such as <math> before it collapses to an empty string", () => {
+      const p = document.createElement("p")
+      p.innerHTML = "Let <math><mi>x</mi></math> be the mean."
+      expect(extractTextContent(p, DEFAULT_CONFIG)).toBe("Let  be the mean.")
+      const extracted = extractTextContent(p, DEFAULT_CONFIG, {
+        replaceElement: (element) => (element.localName === "math" ? "{{0}}" : undefined),
+      })
+      expect(extracted).toBe("Let {{0}} be the mean.")
+    })
+
+    it("is never consulted for our own translated wrappers or their contents", () => {
+      const p = document.createElement("p")
+      p.innerHTML =
+        'Host <math><mi>x</mi></math><span class="read-frog-translated-content-wrapper">译文 <math><mi>y</mi></math></span>'
+      const seen: string[] = []
+      const extracted = extractTextContent(p, DEFAULT_CONFIG, {
+        replaceElement: (element) => {
+          seen.push(element.localName)
+          return element.localName === "math" ? "{{0}}" : undefined
+        },
+      })
+      expect(extracted).toBe("Host {{0}}")
+      // The paragraph itself is offered to the hook; the wrapper and the
+      // <math> inside it never are.
+      expect(seen).toEqual(["p", "math"])
+    })
+  })
+})
+
+describe("site rule node selectors", () => {
+  it("forces inline and block node classifications independently of computed display", () => {
+    const host = fixture(`
+      <span id="forced-block" style="display:inline">forced block text</span>
+      <div id="forced-inline" style="display:block">forced inline text</div>
+    `)
+    const config = configWithSiteRule({
+      forceBlockNodeSelectors: ["#forced-block"],
+      forceInlineNodeSelectors: ["#forced-inline"],
+    })
+
+    walkAndLabelElement(host, "node-forcing", config)
+
+    const forcedBlock = host.querySelector<HTMLElement>("#forced-block")!
+    expect(forcedBlock).toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(forcedBlock).not.toHaveAttribute(INLINE_ATTRIBUTE)
+    expect(isNaturalInlineTransNode(forcedBlock)).toBe(true)
+    expect(isNaturalBlockTransNode(forcedBlock)).toBe(false)
+
+    const forcedInline = host.querySelector<HTMLElement>("#forced-inline")!
+    expect(forcedInline).toHaveAttribute(INLINE_ATTRIBUTE)
+    expect(forcedInline).not.toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(isNaturalBlockTransNode(forcedInline)).toBe(true)
+    expect(isNaturalInlineTransNode(forcedInline)).toBe(false)
+    expect(host).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+
+    host.remove()
+  })
+
+  it("gives forced block nodes priority over forced inline nodes", () => {
+    const host = fixture('<div id="conflict">conflicting selector text</div>')
+    const config = configWithSiteRule({
+      forceBlockNodeSelectors: ["#conflict"],
+      forceInlineNodeSelectors: ["#conflict"],
+    })
+
+    walkAndLabelElement(host, "node-conflict", config)
+
+    const conflict = host.querySelector<HTMLElement>("#conflict")!
+    expect(conflict).toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(conflict).not.toHaveAttribute(INLINE_ATTRIBUTE)
+    host.remove()
+  })
+
+  it("keeps a forced block node self-only instead of propagating block state to its parent", () => {
+    const host = fixture(`
+      <span id="parent" style="display:inline">
+        <em id="child" style="display:inline">nested inline text</em>
+      </span>
+    `)
+    const config = configWithSiteRule({ forceBlockNodeSelectors: ["#child"] })
+
+    walkAndLabelElement(host, "self-only-block", config)
+
+    const child = host.querySelector<HTMLElement>("#child")!
+    expect(child).toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(child).not.toHaveAttribute(INLINE_ATTRIBUTE)
+
+    const parent = host.querySelector<HTMLElement>("#parent")!
+    expect(parent).toHaveAttribute(INLINE_ATTRIBUTE)
+    expect(parent).not.toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(parent).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    host.remove()
+  })
+
+  it("keeps structural and descendant block priority over a forced inline node", () => {
+    const host = fixture(`
+      <h2 id="structural">Heading text</h2>
+      <span id="descendant" style="display:inline"><h3>Nested heading</h3></span>
+    `)
+    const config = configWithSiteRule({
+      forceInlineNodeSelectors: ["#structural", "#descendant"],
+    })
+
+    walkAndLabelElement(host, "structural-priority", config)
+
+    for (const id of ["structural", "descendant"]) {
+      const element = host.querySelector<HTMLElement>(`#${id}`)!
+      expect(element).toHaveAttribute(BLOCK_ATTRIBUTE)
+      expect(element).not.toHaveAttribute(INLINE_ATTRIBUTE)
+      expect(isNaturalBlockTransNode(element)).toBe(true)
+    }
+    host.remove()
+  })
+
+  it("does not label empty ordinary elements even when a node selector matches", () => {
+    const host = fixture('<div id="empty"></div>')
+    const config = configWithSiteRule({ forceBlockNodeSelectors: ["#empty"] })
+
+    walkAndLabelElement(host, "empty-node", config)
+
+    const empty = host.querySelector<HTMLElement>("#empty")!
+    expect(empty).toHaveAttribute(WALKED_ATTRIBUTE, "empty-node")
+    expect(empty).not.toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(empty).not.toHaveAttribute(INLINE_ATTRIBUTE)
+    host.remove()
+  })
+
+  it("does not let node selectors reopen excluded, preserved, notranslate, or PRE nodes", () => {
+    const host = fixture(`
+      <div id="excluded">excluded text</div>
+      <div id="preserved">preserved text</div>
+      <div id="notranslate" class="notranslate">host text</div>
+      <pre id="pre">const answer = 42</pre>
+    `)
+    const config = configWithSiteRule({
+      forceBlockNodeSelectors: ["#excluded", "#preserved", "#notranslate", "#pre"],
+      excludeSelectors: ["#excluded"],
+      preserveTextSelectors: ["#preserved"],
+    })
+
+    walkAndLabelElement(host, "blocked-node", config)
+
+    for (const id of ["excluded", "preserved", "notranslate", "pre"]) {
+      const element = host.querySelector<HTMLElement>(`#${id}`)!
+      expect(element).not.toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(element).not.toHaveAttribute(BLOCK_ATTRIBUTE)
+      expect(element).not.toHaveAttribute(INLINE_ATTRIBUTE)
+    }
+    host.remove()
+  })
+
+  it("does not let a node selector enlarge a strict include scope", () => {
+    const host = fixture(`
+      <article><span id="inside">included paragraph text</span></article>
+      <span id="outside">outside paragraph text</span>
+    `)
+    const config = configWithSiteRule({
+      includeSelectors: ["article"],
+      forceBlockNodeSelectors: ["#outside"],
+    })
+
+    walkAndLabelElement(host, "include-boundary", config)
+
+    expect(host.querySelector("#inside")).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    expect(host.querySelector("#outside")).toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(host.querySelector("#outside")).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    host.remove()
+  })
+
+  it("ignores style-only selectors while assigning traversal labels", () => {
+    const host = fixture(`
+      <span id="block-style" style="display:inline">inline source text</span>
+      <div id="inline-style" style="display:block">block source text</div>
+    `)
+    const config = configWithSiteRule({
+      forceBlockStyleSelectors: ["#block-style"],
+      forceInlineStyleSelectors: ["#inline-style"],
+    })
+
+    walkAndLabelElement(host, "style-only", config)
+
+    expect(host.querySelector("#block-style")).toHaveAttribute(INLINE_ATTRIBUTE)
+    expect(host.querySelector("#block-style")).not.toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(host.querySelector("#inline-style")).toHaveAttribute(BLOCK_ATTRIBUTE)
+    expect(host.querySelector("#inline-style")).not.toHaveAttribute(INLINE_ATTRIBUTE)
+    host.remove()
+  })
+})
+
+describe("document root labeling guard", () => {
+  it("never labels documentElement as a paragraph even with inline-level children beside body", () => {
+    // Unstyled custom elements default to display:inline, so a reader-mode
+    // root (or any script-injected element) mounted beside <body> would
+    // otherwise make <html> itself a paragraph — collapsing the whole
+    // document into one observed translation unit (#1991 follow-up).
+    document.body.innerHTML = `<div><p>Body paragraph text</p></div>`
+    const readerRoot = document.createElement("sr-read")
+    readerRoot.innerHTML = `<sr-rd-content><p id="reader-p">Reader paragraph text</p></sr-rd-content>`
+    document.documentElement.append(readerRoot)
+
+    try {
+      walkAndLabelElement(document.documentElement, "root-guard", DEFAULT_CONFIG)
+
+      expect(document.documentElement).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+      expect(document.documentElement.getAttribute(WALKED_ATTRIBUTE)).toBe("root-guard")
+      // The injected subtree still labels normally and stays translatable.
+      expect(document.getElementById("reader-p")).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    } finally {
+      readerRoot.remove()
+      document.body.innerHTML = ""
+      for (const attr of [
+        WALKED_ATTRIBUTE,
+        PARAGRAPH_ATTRIBUTE,
+        BLOCK_ATTRIBUTE,
+        INLINE_ATTRIBUTE,
+      ]) {
+        document.documentElement.removeAttribute(attr)
+      }
+    }
+  })
+
+  it("never labels documentElement as a paragraph for stray text nodes under html", () => {
+    document.body.innerHTML = `<div><p>Body paragraph text</p></div>`
+    const strayText = document.createTextNode("stray text beside body")
+    document.documentElement.append(strayText)
+
+    try {
+      walkAndLabelElement(document.documentElement, "root-guard-text", DEFAULT_CONFIG)
+
+      expect(document.documentElement).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    } finally {
+      strayText.remove()
+      document.body.innerHTML = ""
+      for (const attr of [
+        WALKED_ATTRIBUTE,
+        PARAGRAPH_ATTRIBUTE,
+        BLOCK_ATTRIBUTE,
+        INLINE_ATTRIBUTE,
+      ]) {
+        document.documentElement.removeAttribute(attr)
+      }
+    }
+  })
+})
+
+describe("document shell notranslate exemption", () => {
+  function cleanUpRoot() {
+    document.documentElement.classList.remove(NOTRANSLATE_CLASS)
+    document.body.classList.remove(NOTRANSLATE_CLASS, "feat-webkit", "theme-dark", "enable-motion")
+    document.body.innerHTML = ""
+    for (const attr of [WALKED_ATTRIBUTE, PARAGRAPH_ATTRIBUTE, BLOCK_ATTRIBUTE, INLINE_ATTRIBUTE]) {
+      document.documentElement.removeAttribute(attr)
+    }
+  }
+
+  it("walks the page when the document root carries the notranslate class", () => {
+    // Telegram Web A ships `<html translate="no" class="notranslate">` while
+    // Telegram Web K ships a bare `<html>`. Once #1992 moved the walk root from
+    // <body> to documentElement, that one class aborted the walk on its first
+    // blocked-element check and page translation labeled nothing at all.
+    document.documentElement.classList.add(NOTRANSLATE_CLASS)
+    document.body.innerHTML = `<div><p id="msg">Message body text</p></div>`
+
+    try {
+      walkAndLabelElement(document.documentElement, "root-notranslate", DEFAULT_CONFIG)
+
+      expect(document.getElementById("msg")).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    } finally {
+      cleanUpRoot()
+    }
+  })
+
+  it("walks EdStem content when body carries the notranslate class", () => {
+    document.body.classList.add(NOTRANSLATE_CLASS, "feat-webkit", "theme-dark", "enable-motion")
+    document.body.innerHTML = `
+      <main>
+        <p id="edstem-content" class="amber-el amber-paragraph amber-content">
+          Welcome to the worksheets for Programming and Software Development!
+        </p>
+      </main>
+    `
+
+    try {
+      walkAndLabelElement(document.documentElement, "body-notranslate", DEFAULT_CONFIG)
+
+      expect(document.body).toHaveAttribute(WALKED_ATTRIBUTE, "body-notranslate")
+      expect(document.getElementById("edstem-content")).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    } finally {
+      cleanUpRoot()
+    }
+  })
+
+  it("still blocks notranslate elements nested below the document shell", () => {
+    // The exemption is shell-only: nested opt-outs (and read frog's own
+    // injected UI, which carries the same class) must keep blocking descent.
+    document.body.classList.add(NOTRANSLATE_CLASS)
+    document.body.innerHTML = `
+      <div>
+        <p id="msg">Message body text</p>
+        <div class="${NOTRANSLATE_CLASS}"><p id="opted-out">Opted out text</p></div>
+      </div>
+    `
+
+    try {
+      walkAndLabelElement(document.documentElement, "nested-notranslate", DEFAULT_CONFIG)
+
+      expect(document.body).toHaveAttribute(WALKED_ATTRIBUTE, "nested-notranslate")
+      expect(document.getElementById("msg")).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+      expect(document.getElementById("opted-out")).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    } finally {
+      cleanUpRoot()
+    }
+  })
+})
+
+describe("plain-text document <pre> exemption", () => {
+  // A .txt URL renders as one browser-generated <pre> holding the entire file
+  // (Chrome also gives it `white-space: pre-wrap`), so the blanket PRE block
+  // leaves such a page with nothing to translate at all.
+  const STORY_TEXT = "First hard wrapped paragraph.\n\nSecond hard wrapped paragraph."
+
+  function withContentType(contentType: string, callback: () => void) {
+    Object.defineProperty(document, "contentType", { value: contentType, configurable: true })
+    try {
+      callback()
+    } finally {
+      // Restore the prototype getter jsdom installs (text/html in tests).
+      Reflect.deleteProperty(document, "contentType")
+      document.body.innerHTML = ""
+    }
+  }
+
+  function renderPlainTextViewer(): HTMLElement {
+    document.body.innerHTML = `<pre id="viewer">${STORY_TEXT}</pre>`
+    return document.getElementById("viewer")!
+  }
+
+  it("walks and labels the generated <pre> of a text/plain document", () => {
+    withContentType("text/plain", () => {
+      const viewer = renderPlainTextViewer()
+
+      walkAndLabelElement(document.body, "plain-text-pre", DEFAULT_CONFIG)
+
+      expect(viewer).toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(viewer).toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+      // PRE is in FORCE_BLOCK_TAGS, so the exempted viewer is a block unit.
+      expect(viewer).toHaveAttribute(BLOCK_ATTRIBUTE)
+      expect(extractTextContent(viewer, DEFAULT_CONFIG)).toContain("Second hard wrapped paragraph.")
+    })
+  })
+
+  it("keeps blocking an authored <pre> in an html document", () => {
+    const viewer = renderPlainTextViewer()
+
+    try {
+      walkAndLabelElement(document.body, "html-pre", DEFAULT_CONFIG)
+
+      expect(document.contentType).toBe("text/html")
+      expect(viewer).not.toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(viewer).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+      expect(extractTextContent(viewer, DEFAULT_CONFIG)).toBe("")
+    } finally {
+      document.body.innerHTML = ""
+    }
+  })
+
+  it("lets a site rule that names PRE explicitly win over the exemption", () => {
+    // The exemption un-blocks what the defaults block, so an author who wants
+    // PRE blocked on a plain-text host must be able to say so.
+    withContentType("text/plain", () => {
+      const viewer = renderPlainTextViewer()
+      const config = configWithSiteRule({ "dontWalkTags.add": ["PRE"] })
+
+      walkAndLabelElement(document.body, "explicit-add", config)
+
+      expect(viewer).not.toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(viewer).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    })
+  })
+
+  it("still honors excludeSelectors on a plain-text document", () => {
+    withContentType("text/plain", () => {
+      const viewer = renderPlainTextViewer()
+      const config = configWithSiteRule({ excludeSelectors: ["pre"] })
+
+      walkAndLabelElement(document.body, "exclude-selector", config)
+
+      expect(viewer).not.toHaveAttribute(WALKED_ATTRIBUTE)
+      expect(viewer).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+    })
+  })
+
+  it("keeps other plain-text-ish document types blocked", () => {
+    for (const contentType of ["application/json", "text/markdown", "text/xml"]) {
+      withContentType(contentType, () => {
+        const viewer = renderPlainTextViewer()
+
+        walkAndLabelElement(document.body, `blocked-${contentType}`, DEFAULT_CONFIG)
+
+        expect(viewer).not.toHaveAttribute(PARAGRAPH_ATTRIBUTE)
+      })
+    }
+  })
+})

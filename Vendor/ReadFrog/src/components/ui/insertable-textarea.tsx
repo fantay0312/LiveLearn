@@ -1,0 +1,119 @@
+import * as React from "react"
+import { Button } from "@/components/ui/base-ui/button"
+import { Textarea } from "@/components/ui/base-ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/base-ui/tooltip"
+import { cn } from "@/utils/styles/utils"
+
+interface InsertableTextareaHandle extends HTMLTextAreaElement {
+  insertTextAtCursor: (text: string) => void
+}
+
+interface InsertableTextareaProps extends Omit<React.ComponentProps<"textarea">, "ref"> {
+  ref?: React.Ref<InsertableTextareaHandle>
+}
+
+interface InsertCell {
+  text: string
+  description: string
+}
+
+interface QuickInsertableTextareaProps extends Omit<React.ComponentProps<"textarea">, "ref"> {
+  ref?: React.Ref<InsertableTextareaHandle>
+  insertCells?: InsertCell[]
+  cellsClassName?: string
+  cellClassName?: string
+  containerClassName?: string
+}
+
+function InsertableTextarea({ className, ref, ...props }: InsertableTextareaProps) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  React.useImperativeHandle(ref, () => {
+    const textarea = textareaRef.current
+    if (!textarea) throw new Error("Textarea ref is null")
+
+    return Object.assign(textarea, {
+      insertTextAtCursor(text: string) {
+        const currentTextarea = textareaRef.current
+        if (!currentTextarea) return
+
+        const { selectionStart, selectionEnd, value } = currentTextarea
+        const newValue = value.slice(0, selectionStart) + text + value.slice(selectionEnd)
+
+        // Get the native value setter to bypass React's control
+        const nativeInputValueDescriptor = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          "value",
+        )
+
+        if (nativeInputValueDescriptor?.set) {
+          // Use the native setter to avoid React's internal tracking conflicts
+          nativeInputValueDescriptor.set.call(currentTextarea, newValue)
+          currentTextarea.dispatchEvent(new Event("input", { bubbles: true }))
+        }
+
+        const newCursorPos = selectionStart + text.length
+        currentTextarea.setSelectionRange(newCursorPos, newCursorPos)
+        currentTextarea.focus()
+      },
+    })
+  }, [])
+
+  return <Textarea ref={textareaRef} className={className} {...props} />
+}
+
+const DEFAULT_INSERT_CELLS: InsertCell[] = []
+
+function QuickInsertableTextarea({
+  className,
+  insertCells = DEFAULT_INSERT_CELLS,
+  cellsClassName,
+  cellClassName,
+  containerClassName,
+  ...props
+}: QuickInsertableTextareaProps) {
+  const textareaRef = React.useRef<InsertableTextareaHandle>(null)
+
+  const handleCellClick = (cellText: string) => {
+    textareaRef.current?.insertTextAtCursor(cellText)
+  }
+
+  if (insertCells.length === 0) {
+    return <InsertableTextarea ref={textareaRef} className={className} {...props} />
+  }
+
+  return (
+    <div className={cn("w-full min-w-0 space-y-2", containerClassName)}>
+      <InsertableTextarea ref={textareaRef} className={className} {...props} />
+      <div className={cn("flex flex-wrap gap-2", cellsClassName)}>
+        {insertCells.map((cell) => (
+          <Tooltip key={cell.text}>
+            <TooltipTrigger render={<div className="inline-flex" />}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cellClassName}
+                onClick={() => handleCellClick(cell.text)}
+                disabled={props.disabled || props.readOnly}
+              >
+                {cell.text}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{cell.description}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export { InsertableTextarea, QuickInsertableTextarea }
+export type {
+  InsertableTextareaHandle,
+  InsertableTextareaProps,
+  InsertCell,
+  QuickInsertableTextareaProps,
+}

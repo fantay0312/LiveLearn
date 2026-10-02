@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
+<title id="title">LiveLearn 标志</title>
+<defs><linearGradient id="ribbon-0-dark" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F7F8"/><stop offset=".56" stop-color="#D0DBE3"/><stop offset="1" stop-color="#A1B5C8"/></linearGradient><linearGradient id="ribbon-1-dark" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#8EA9BC"/><stop offset=".56" stop-color="#BFCDD5"/><stop offset="1" stop-color="#E4ECF0"/></linearGradient></defs><path d="M6.0 18.2 C3.3 11.7 8.0 5.0 15.2 5.4 C20.1 5.5 24.5 7.6 26.7 11.0 C22.8 8.55 18.6 7.6 14.8 8.2 C9.8 8.95 6.1 12.6 6.0 18.2 Z" fill="url(#ribbon-0-dark)"/>
+<path d="M26.0 13.8 C28.7 20.3 24.0 27.0 16.8 26.6 C11.9 26.5 7.5 24.4 5.3 21.0 C9.2 23.45 13.4 24.4 17.2 23.8 C22.2 23.05 25.9 19.4 26.0 13.8 Z" fill="url(#ribbon-1-dark)"/><path d="M16 13.6 Q16.3 15.7 17.95 16 Q16.3 16.3 16 18.4 Q15.7 16.3 14.05 16 Q15.7 15.7 16 13.6 Z" fill="#F7FCFF"/>
+</svg>

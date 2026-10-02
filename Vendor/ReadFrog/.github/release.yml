@@ -1,0 +1,45 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+      - automated
+      - bot
+      - github-actions
+    authors:
+      - dependabot[bot]
+      - github-actions[bot]
+      - github-actions
+      - action-bot
+
+  categories:
+    - title: 🚨 Breaking Changes
+      labels:
+        - breaking-change
+    - title: ✨ New Features
+      labels:
+        - feat
+    - title: 🐛 Bug Fixes
+      labels:
+        - fix
+    - title: 🤖 AI
+      labels:
+        - ai
+    - title: 🎨 UI Styles
+      labels:
+        - style
+    - title: 🚀 Performance
+      labels:
+        - perf
+    - title: 📚 Documentation
+      labels:
+        - docs
+    - title: 🔧 Maintenance
+      labels:
+        - chore
+        - refactor
+        - ci
+        - build
+        - i18n
+    - title: Other Changes
+      labels: ["*"]

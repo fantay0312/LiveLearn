@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 640" role="img" aria-labelledby="title">
+<title id="title">LiveLearn 星核标识</title>
+<rect width="1080" height="640" fill="#090D12"/>
+<g transform="translate(28 54) scale(.498046875)"><defs><linearGradient id="plate" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#121923"/><stop offset=".45" stop-color="#080D13"/><stop offset="1" stop-color="#030507"/></linearGradient></defs>
+<rect x="64" y="64" width="896" height="896" rx="198" fill="url(#plate)" stroke="#D1E6F8" stroke-opacity=".09" stroke-width="1.5"/>
+<g transform="translate(128 128) scale(24)"><defs><linearGradient id="ribbon-0-dark" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F7F8"/><stop offset=".56" stop-color="#D0DBE3"/><stop offset="1" stop-color="#A1B5C8"/></linearGradient><linearGradient id="ribbon-1-dark" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#8EA9BC"/><stop offset=".56" stop-color="#BFCDD5"/><stop offset="1" stop-color="#E4ECF0"/></linearGradient></defs><path d="M6.0 18.2 C3.3 11.7 8.0 5.0 15.2 5.4 C20.1 5.5 24.5 7.6 26.7 11.0 C22.8 8.55 18.6 7.6 14.8 8.2 C9.8 8.95 6.1 12.6 6.0 18.2 Z" fill="url(#ribbon-0-dark)"/>
+<path d="M26.0 13.8 C28.7 20.3 24.0 27.0 16.8 26.6 C11.9 26.5 7.5 24.4 5.3 21.0 C9.2 23.45 13.4 24.4 17.2 23.8 C22.2 23.05 25.9 19.4 26.0 13.8 Z" fill="url(#ribbon-1-dark)"/><path d="M16 13.6 Q16.3 15.7 17.95 16 Q16.3 16.3 16 18.4 Q15.7 16.3 14.05 16 Q15.7 15.7 16 13.6 Z" fill="#F7FCFF"/></g></g>
+<text x="572" y="111" fill="#EEF6FF" font-family="-apple-system,Helvetica Neue,sans-serif" font-size="43" font-weight="500">LiveLearn</text>
+<text x="575" y="149" fill="#A8BBCB" font-family="-apple-system,PingFang SC,sans-serif" font-size="17">双股流光 · 同一星核</text>
+<rect x="572" y="222" width="172" height="116" fill="#EDF1F5"/>
+<g transform="translate(620 241) scale(2.375)"><path d="M6.0 18.2 C3.3 11.7 8.0 5.0 15.2 5.4 C20.1 5.5 24.5 7.6 26.7 11.0 C22.8 8.55 18.6 7.6 14.8 8.2 C9.8 8.95 6.1 12.6 6.0 18.2 Z" fill="#273749"/>
+<path d="M26.0 13.8 C28.7 20.3 24.0 27.0 16.8 26.6 C11.9 26.5 7.5 24.4 5.3 21.0 C9.2 23.45 13.4 24.4 17.2 23.8 C22.2 23.05 25.9 19.4 26.0 13.8 Z" fill="#273749"/><path d="M16 13.6 Q16.3 15.7 17.95 16 Q16.3 16.3 16 18.4 Q15.7 16.3 14.05 16 Q15.7 15.7 16 13.6 Z" fill="#273749"/></g>
+<g transform="translate(770 230) scale(3)"><path d="M6.0 18.2 C3.3 11.7 8.0 5.0 15.2 5.4 C20.1 5.5 24.5 7.6 26.7 11.0 C22.8 8.55 18.6 7.6 14.8 8.2 C9.8 8.95 6.1 12.6 6.0 18.2 Z" fill="#EEF6FF"/>
+<path d="M26.0 13.8 C28.7 20.3 24.0 27.0 16.8 26.6 C11.9 26.5 7.5 24.4 5.3 21.0 C9.2 23.45 13.4 24.4 17.2 23.8 C22.2 23.05 25.9 19.4 26.0 13.8 Z" fill="#EEF6FF"/><path d="M16 13.6 Q16.3 15.7 17.95 16 Q16.3 16.3 16 18.4 Q15.7 16.3 14.05 16 Q15.7 15.7 16 13.6 Z" fill="#EEF6FF"/></g>
+<text x="575" y="430" fill="#8FA3B4" font-family="-apple-system,PingFang SC,sans-serif" font-size="14">原生矢量 · 应用图标 · 单色菜单栏</text>
+</svg>

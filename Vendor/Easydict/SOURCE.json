@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/tisfeng/Easydict",
+  "commit": "1d2dde404836fd6d0b914c23d8e44ff7eba13d7c",
+  "license": "GPL-3.0",
+  "sha256": "cb6f4df39c65f761cdfeb579870e1140a4ee7e83af4ca084112a3d52abaf7a54",
+  "archive": "upstream.tar.gz",
+  "original_archive_sha256": "1edec1e750abab9ccb1e4ca652e3a504e6d927afc32aeac2b9e1b8410057498c",
+  "sanitization": {
+    "removed": "Local agent configuration and caches",
+    "cleared_plists": [
+      "Easydict/App/GoogleService-Info.plist",
+      "Easydict/Swift/Feature/DefaultAPIKeys/EncryptedSecretKeys.plist"
+    ]
+  }
+}

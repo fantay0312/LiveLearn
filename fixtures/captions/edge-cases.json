@@ -1,0 +1,28 @@
+{
+  "name": "edge-cases",
+  "description": "T07 duplicate sentences kept, duplicate eventID ignored, T08 late translation for an older revision, gap, T09 reconnect with a stale event from the previous provider epoch. Replay through the reducer in order; expectations below must hold on every platform.",
+  "events": [
+    {"schemaVersion":1,"type":"source.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e1","segmentID":"s1","revision":1,"startNs":0,"endNs":600000000,"text":"Thank you.","language":"en","isFinal":true,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"translation.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e2","translationID":"t1","sourceRefs":[{"segmentID":"s1","revision":1}],"text":"谢谢。","language":"zh-Hans","isFinal":true},
+    {"schemaVersion":1,"type":"source.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e3","segmentID":"s2","revision":1,"startNs":700000000,"endNs":1300000000,"text":"Thank you.","language":"en","isFinal":true,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"translation.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e4","translationID":"t2","sourceRefs":[{"segmentID":"s2","revision":1}],"text":"谢谢。","language":"zh-Hans","isFinal":true},
+    {"schemaVersion":1,"type":"source.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e3","segmentID":"s2","revision":1,"startNs":700000000,"endNs":1300000000,"text":"Thank you.","language":"en","isFinal":true,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"source.replace","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e5","segmentID":"s3","revision":1,"startNs":1400000000,"endNs":2000000000,"text":"We lose the evidence for the post","language":"en","isFinal":false,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"source.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e6","segmentID":"s3","revision":2,"startNs":1400000000,"endNs":2400000000,"text":"We lose the evidence for the postmortem.","language":"en","isFinal":true,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"translation.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e7","translationID":"t3b","sourceRefs":[{"segmentID":"s3","revision":2}],"text":"我们会失去复盘的证据。","language":"zh-Hans","isFinal":true},
+    {"schemaVersion":1,"type":"translation.replace","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"e8","translationID":"t3a","sourceRefs":[{"segmentID":"s3","revision":1}],"text":"我们失去了给帖子的证据","language":"zh-Hans","isFinal":false},
+    {"schemaVersion":1,"type":"lane.gap","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"g1","startNs":2400000000,"endNs":4700000000,"gapReason":"network"},
+    {"schemaVersion":1,"type":"lane.state","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":2,"eventID":"st2","laneState":"running"},
+    {"schemaVersion":1,"type":"source.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":2,"eventID":"e9","segmentID":"s4","revision":1,"startNs":4800000000,"endNs":5400000000,"text":"Any questions?","language":"en","isFinal":true,"timingQuality":"segment"},
+    {"schemaVersion":1,"type":"source.replace","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":1,"eventID":"stale1","segmentID":"s3","revision":3,"text":"SHOULD NOT APPEAR","language":"en","isFinal":false},
+    {"schemaVersion":1,"type":"translation.final","sessionID":"fixture","laneID":"remote","captureEpoch":1,"providerEpoch":2,"eventID":"e10","translationID":"t4","sourceRefs":[{"segmentID":"s4","revision":1}],"text":"有问题吗？","language":"zh-Hans","isFinal":true}
+  ],
+  "expect": {
+    "segmentCount": 4,
+    "sourceTexts": ["Thank you.", "Thank you.", "We lose the evidence for the postmortem.", "Any questions?"],
+    "translations": ["谢谢。", "谢谢。", "我们会失去复盘的证据。", "有问题吗？"],
+    "gapCount": 1,
+    "activeProviderEpoch": 2,
+    "mustNotContain": "SHOULD NOT APPEAR"
+  }
+}

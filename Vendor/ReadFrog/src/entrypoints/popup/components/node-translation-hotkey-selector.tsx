@@ -1,0 +1,74 @@
+import { deepmerge } from "deepmerge-ts"
+import { useAtom } from "jotai"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/base-ui/select"
+import { Switch } from "@/components/ui/base-ui/switch"
+import { configFieldsAtomMap } from "@/utils/atoms/config"
+import { HOTKEY_ICONS, HOTKEYS } from "@/utils/constants/hotkeys"
+import { i18n } from "@/utils/i18n"
+
+function HotkeyDisplay({ hotkey }: { hotkey: (typeof HOTKEYS)[number] }) {
+  const icon = HOTKEY_ICONS[hotkey]
+  const label = i18n.t(`hotkey.${hotkey}`)
+
+  if (hotkey === "clickAndHold") {
+    return (
+      <>
+        {icon} {label} {i18n.t("popup.translateParagraph")}
+      </>
+    )
+  }
+
+  return (
+    <>
+      {i18n.t("popup.hover")} + {icon} {label} {i18n.t("popup.translateParagraph")}
+    </>
+  )
+}
+
+export default function NodeTranslationHotkeySelector() {
+  const [translateConfig, setTranslateConfig] = useAtom(configFieldsAtomMap.pageTranslation)
+
+  const handleNodeTranslationEnabledChange = async (checked: boolean) => {
+    await setTranslateConfig(deepmerge(translateConfig, { node: { enabled: checked } }))
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <Select
+        value={translateConfig.node.hotkey}
+        onValueChange={(value: (typeof HOTKEYS)[number] | null) => {
+          if (value)
+            void setTranslateConfig(deepmerge(translateConfig, { node: { hotkey: value } }))
+        }}
+      >
+        <SelectTrigger
+          size="sm"
+          className="ring-none -mt-3.5 -mb-4 -ml-2 h-5! cursor-pointer truncate rounded-md border-none bg-transparent! px-2 pt-3.5 pb-4 text-[13px] font-medium shadow-none focus-visible:border-none focus-visible:ring-0"
+        >
+          <div className="truncate">
+            <HotkeyDisplay hotkey={translateConfig.node.hotkey} />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {HOTKEYS.map((item) => (
+              <SelectItem key={item} value={item}>
+                <HotkeyDisplay hotkey={item} />
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Switch
+        checked={translateConfig.node.enabled}
+        onCheckedChange={(checked) => void handleNodeTranslationEnabledChange(checked)}
+      />
+    </div>
+  )
+}
