@@ -124,7 +124,7 @@ struct AppearanceSettings: View {
                     TextSegment(options: OverlayLineSpacing.allCases.map { ($0, $0.label) }, selection: $s.overlayLineSpacing, label: "字幕行距")
                 }.disabled(s.captionPresentation == .singleLine)
                 SheetDivider()
-                SettingRow("默认位置", note: "浮层可直接拖动；超出屏幕时自动收窄。") {
+                SettingRow("默认位置", note: "未锁定时按住字幕任意位置可拖动，位置会记住；超出屏幕时自动收窄。") {
                     TextSegment(options: OverlayPlacement.allCases.map { ($0, $0.label) }, selection: $s.overlayPlacement, label: "默认位置")
                 }
             }
@@ -136,7 +136,6 @@ struct AppearanceSettings: View {
         return VStack(alignment: .leading, spacing: LLMetrics.space(6)) {
             SettingsGroup {
                 SettingRow("显示原文") { Toggle("显示原文", isOn: $s.showSourceInOverlay).labelsHidden().toggleStyle(QuietSwitchStyle()) }
-                    .disabled(s.captionPresentation == .singleLine)
                 SheetDivider()
                 SettingRow("上一句译文") { Toggle("显示上一句译文", isOn: $s.showPreviousLine).labelsHidden().toggleStyle(QuietSwitchStyle()) }
                     .disabled(s.captionPresentation == .singleLine)

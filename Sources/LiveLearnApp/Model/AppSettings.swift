@@ -92,8 +92,8 @@ enum CaptionPresentation: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String { self == .layered ? "分层显示" : "单行字幕" }
     var note: String {
-        self == .layered ? "当前句突出显示，上下文与原文分层呈现。"
-            : "像视频字幕一样逐句切换，长句自动分段；始终只显示一行。"
+        self == .layered ? "正在讲的这一句突出显示，上一句与原文分层呈现。"
+            : "像视频字幕一样逐句切换，长句自动分段；译文只占一行，原文可显示在其下。"
     }
 }
 

@@ -52,10 +52,23 @@ struct OverlayStyle {
             let backdrop = HexColor.luminance(HexColor.hex(from: background))
             let contrast = (max(foreground, backdrop) + 0.05) / (min(foreground, backdrop) + 0.05)
             let readableEmphasis = foreground < 0.4 ? max(0.76, emphasis) : emphasis
-            if opacity >= 0.95 && contrast >= 4.5 { return CaptionTextRenderer(edges: [], foregroundOpacity: readableEmphasis) }
+            if opacity >= 0.95 && contrast >= 4.5 { return CaptionTextRenderer(edges: [], lineOpacity: readableEmphasis) }
             return .automatic(hex: HexColor.hex(from: isSource ? source : text), size: size, emphasis: readableEmphasis)
         }
         return CaptionTextRenderer(edges: [.init(hex: outlineHex, width: outlineWidth)])
+    }
+
+    /// The least plate an unlocked caption stands on while the pointer is over it.
+    static let grabOpacity = 0.34
+
+    /// The block's fill. A caption that can be moved shows it under the pointer: a clear block
+    /// gets a plate of the tone opposite its ink, a faint one is lifted to `grabOpacity`. The
+    /// plate says the caption can be picked up, and it is what takes the press: a window's
+    /// transparent pixels let a click fall through to whatever is underneath.
+    func plate(grabbable: Bool) -> Color {
+        guard grabbable, opacity < Self.grabOpacity else { return background.opacity(opacity) }
+        let tone = opacity > 0 ? background : Color(hex: CaptionTextRenderer.contrastingHex(HexColor.hex(from: text)))
+        return tone.opacity(Self.grabOpacity)
     }
 
     /// Retain semantic hierarchy without letting moving imagery show through the letters.
@@ -65,16 +78,13 @@ struct OverlayStyle {
     /// `increasedContrast` is §3.3's high-contrast mode: an opaque scrim, pure white text when
     /// the translation colour is the default, the source at no less than 85%, the labels lifted.
     @MainActor
-    static func resolve(_ s: AppSettings, forceOpaque: Bool, increasedContrast: Bool = false, backdropIsBright: Bool = false) -> OverlayStyle {
+    static func resolve(_ s: AppSettings, forceOpaque: Bool, increasedContrast: Bool = false) -> OverlayStyle {
         let bg = HexColor.color(s.overlayBackgroundHex, fallback: Color(hex: 0x12110F))
         var text = HexColor.color(s.overlayTextHex, fallback: LLOverlay.text)
-        let adaptiveDarkInk = backdropIsBright && s.overlayContrastMode == .automatic && !forceOpaque && !increasedContrast && s.overlayOpacity < 0.85
-        if adaptiveDarkInk { text = Color(hex: 0x202124) }
         if increasedContrast, s.overlayTextHex.uppercased() == AppSettings.defaultOverlayTextHex { text = .white }
         let requestedOpacity = s.overlayOpacity.isFinite ? min(1, max(0, s.overlayOpacity)) : AppSettings.defaultOverlayOpacity
         let sourceAlpha = 0.72
         var source = s.overlaySourceHex.isEmpty ? text.opacity(sourceAlpha) : HexColor.color(s.overlaySourceHex, fallback: text.opacity(sourceAlpha))
-        if adaptiveDarkInk { source = Color(hex: 0x44464A) }
         if increasedContrast, s.overlaySourceHex.isEmpty { source = text }
         let opacity = increasedContrast ? 1.0 : (forceOpaque ? 1.0 : requestedOpacity)
         let darkBackground = HexColor.luminance(s.overlayBackgroundHex) < 0.4

@@ -92,12 +92,12 @@ struct OverlayReadabilitySettings: View {
                         QuietColorWell(label: "原文颜色", color: Binding(
                             get: { HexColor.color(s.overlaySourceHex.isEmpty ? s.overlayTextHex : s.overlaySourceHex, fallback: LLOverlay.text2) },
                             set: { s.overlaySourceHex = HexColor.hex(from: $0) }))
-                    }.disabled(!s.showSourceInOverlay || s.captionPresentation == .singleLine)
+                    }.disabled(!s.showSourceInOverlay)
                 }
                 // The 原文 row's note, with the one action it offers: it sits where a row note
                 // sits (just under the name, inside the row's rule) rather than as a free line.
                 HStack(alignment: .firstTextBaseline) {
-                    SettingsNote(s.captionPresentation == .singleLine ? "单行模式仅显示译文，原文设置在分层模式中保留。" : s.showSourceInOverlay ? (s.overlaySourceHex.isEmpty ? "原文颜色跟随译文" : "原文使用独立颜色") : "原文已隐藏，可在「显示与行为」中开启")
+                    SettingsNote(s.showSourceInOverlay ? (s.overlaySourceHex.isEmpty ? "原文颜色跟随译文" : "原文使用独立颜色") : "原文已隐藏，可在「显示与行为」中开启")
                     Spacer()
                     if !s.overlaySourceHex.isEmpty {
                         Button("跟随译文") { s.overlaySourceHex = "" }.buttonStyle(SettingsActionStyle())
@@ -107,7 +107,7 @@ struct OverlayReadabilitySettings: View {
                 SheetDivider()
                 DictationFold(title: "对比与描边", summary: s.overlayContrastMode.label, expanded: $advanced) {
                     SettingsSheet {
-                        SettingRow("对比模式", note: s.overlayContrastMode == .automatic ? "浅色画面使用深色实心字，深色画面恢复原字色；短暂闪光不会立刻切换。" : "自定描边；设为 0 可关闭。") {
+                        SettingRow("对比模式", note: s.overlayContrastMode == .automatic ? "字色保持不变；按字色自动加一圈反差柔光，明暗画面都能看清。" : "自定描边；设为 0 可关闭。") {
                             TextSegment(options: OverlayContrastMode.allCases.map { ($0, $0.label) },
                                         selection: $s.overlayContrastMode, label: "字幕对比模式")
                         }
@@ -125,8 +125,6 @@ struct OverlayReadabilitySettings: View {
                     }
                 }
             }
-            CaptionAutoContrastPermission()
-                .padding(.top, LLMetrics.space(3))
         }
     }
 

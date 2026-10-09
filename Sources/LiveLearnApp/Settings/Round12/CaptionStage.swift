@@ -88,8 +88,7 @@ private struct CaptionStageSurface: View {
 
     var body: some View {
         let style = OverlayStyle.resolve(settings, forceOpaque: reduceTransparency || settings.overlayOpaque,
-                                         increasedContrast: contrast == .increased,
-                                         backdropIsBright: scene.isBright(phase: phase))
+                                         increasedContrast: contrast == .increased)
         let top = settings.overlayPlacement == .top
         GeometryReader { proxy in
             let width = CGFloat(CaptionPreviewSurface.layoutWidth(settings.captionDisplayWidth))

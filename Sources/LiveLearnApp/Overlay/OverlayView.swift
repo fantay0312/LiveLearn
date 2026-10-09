@@ -26,13 +26,15 @@ struct OverlayView: View {
 
     private var style: OverlayStyle {
         OverlayStyle.resolve(model.settings, forceOpaque: reduceTransparency || model.settings.overlayOpaque,
-                             increasedContrast: contrast == .increased, backdropIsBright: layout?.backdropIsBright == true)
+                             increasedContrast: contrast == .increased)
     }
 
     private var width: CGFloat? { forcedWidth ?? layout?.width }
     private var controlsVisible: Bool { (layout?.controlsVisible ?? revealed) || openControl != nil || toolbarFocused || previewControls }
     private var pointerInside: Bool { layout?.pointerInside ?? hoverInside }
     private var shouldAutoHide: Bool { !(layout?.pointerOnToolbar ?? hoverInside) && !toolbarFocused && openControl == nil && !previewControls }
+    /// Unlocked and under the pointer (or in the hand): the block shows the plate it is moved by.
+    private var grabbable: Bool { !model.overlayLocked && (pointerInside || layout?.isDragging == true) }
 
     var body: some View {
         let style = self.style
@@ -55,7 +57,8 @@ struct OverlayView: View {
                 .frame(maxWidth: .infinity)
                 .background {
                     RoundedRectangle(cornerRadius: LLMetrics.Radius.overlay, style: .continuous)
-                        .fill(style.background.opacity(style.opacity))
+                        .fill(style.plate(grabbable: grabbable))
+                        .animation(LLMotion.hover(reduceMotion), value: grabbable)
                 }
         }
         .frame(width: width)
@@ -103,7 +106,6 @@ struct OverlayView: View {
             ForEach(OverlayContrastMode.allCases) { Text($0.label).tag($0) }
         }
         Toggle("显示原文", isOn: $settings.showSourceInOverlay)
-            .disabled(settings.captionPresentation == .singleLine)
         Toggle("显示上一句", isOn: $settings.showPreviousLine)
             .disabled(settings.captionPresentation == .singleLine)
         Toggle("显示呼吸线", isOn: $settings.showBreathLine)

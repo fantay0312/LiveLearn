@@ -13,8 +13,8 @@ enum CaptionPreviewScene: String, CaseIterable, Identifiable {
     }
 
     /// Whether the backdrop is bright at `phase`: always on 浅色, never on 深色, and on 高对比 in
-    /// alternating stretches, so a played preview crosses from one to the other. What the
-    /// caption style is resolved against, and which backdrop colour is drawn.
+    /// alternating stretches, so a played preview crosses from one to the other: the backdrop
+    /// colour the caption has to stay readable over.
     func isBright(phase: Double) -> Bool { self == .light || (self == .highContrast && sin(phase * 0.65) >= 0) }
 }
 
@@ -34,8 +34,7 @@ struct CaptionPreviewSurface: View {
 
     var body: some View {
         let style = OverlayStyle.resolve(settings, forceOpaque: reduceTransparency || settings.overlayOpaque,
-                                         increasedContrast: contrast == .increased,
-                                         backdropIsBright: scene.isBright(phase: phase))
+                                         increasedContrast: contrast == .increased)
         block(style: style).padding(16).frame(minHeight: 168)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { CaptionPreviewBackdrop(scene: scene, phase: phase) }

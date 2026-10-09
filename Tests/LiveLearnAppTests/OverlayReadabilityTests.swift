@@ -26,14 +26,15 @@ struct OverlayReadabilityTests {
             OverlayAppearancePreset.paper.apply(to: settings)
             let style = OverlayStyle.resolve(settings, forceOpaque: false)
             #expect(style.opacity == 0.96)
-            #expect(style.renderer(size: 28).shadowHex == nil)
+            #expect(style.renderer(size: 28).haloHex == nil)
             #expect(settings.overlayFontFamily == "Songti SC")
             #expect(settings.overlayLineSpacing == .relaxed)
             OverlayAppearancePreset.clear.apply(to: settings)
             #expect(settings.overlayOpacity == 0 && settings.overlayTextHex == "FFFFFF")
             #expect(settings.overlayFontFamily.isEmpty)
             let renderer = OverlayStyle.resolve(settings, forceOpaque: false).renderer(size: 26)
-            #expect(renderer.shadowRadius <= 2.2 && renderer.shadowOpacity <= 0.9)
+            #expect(renderer.haloHex == 0 && !renderer.halos.isEmpty)
+            #expect(renderer.halos.allSatisfy { $0.radius <= 4.5 && $0.opacity < 1 })
             #expect(renderer.edges.isEmpty)
         }
     }
@@ -61,8 +62,8 @@ struct OverlayReadabilityTests {
             #expect(HexColor.hex(from: style.text) == "000000")
             #expect(HexColor.hex(from: style.source) == "FFFFFF")
             #expect(style.renderer(size: 26).edges.isEmpty)
-            #expect(style.renderer(size: 26).shadowHex == 0xFFFFFF)
-            #expect(style.renderer(source: true, size: 17).shadowHex == 0)
+            #expect(style.renderer(size: 26).haloHex == 0xFFFFFF)
+            #expect(style.renderer(source: true, size: 17).haloHex == 0)
             // Mid-grey must choose black by measured contrast, not an arbitrary 0.4 threshold.
             #expect(CaptionTextRenderer.contrastingHex("808080") == 0)
             #expect(CaptionTextRenderer.contrastingHex("000000") == 0xFFFFFF)

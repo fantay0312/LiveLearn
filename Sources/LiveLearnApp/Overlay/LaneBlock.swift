@@ -33,6 +33,7 @@ struct LaneBlock: View {
     var body: some View {
         if settings.captionPresentation == .singleLine {
             SingleLineCaptionView(content: SingleLineCaptionContent(current: current, previous: previous),
+                                  pendingSource: current?.sourceText ?? "",
                                   settings: settings, style: style, statusText: statusText,
                                   label: showsLabel ? label : nil)
         } else { layeredBody }
@@ -116,7 +117,10 @@ struct LaneBlock: View {
         let targetSize = settings.captionTargetSize * (prominent ? 1 : emphasis == .history ? 0.62 : 0.70)
         let sourceSize = settings.captionSourceSize * (prominent ? 1 : 0.82)
         let lines = 1
-        let alpha = prominent ? (line.isStale ? style.secondaryOpacity(0.70) : 1) : style.secondaryOpacity(emphasis == .history ? 0.48 : 0.68)
+        // The sentence being read keeps one ink from its first word to its last: a translation
+        // one revision behind its source is not dimmed, or a live line would pulse with every
+        // partial result.
+        let alpha = prominent ? 1 : style.secondaryOpacity(emphasis == .history ? 0.6 : 0.68)
         let primary = CaptionReadingWindow.excerpt(line.primaryText(showSource: settings.showSourceInOverlay) ?? "", capacity: Double(textWidth) / targetSize * Double(lines) * 0.90)
         let source = CaptionReadingWindow.excerpt(line.source, capacity: Double(textWidth) / sourceSize * 0.90)
         return VStack(alignment: settings.overlayTextAlignment.horizontal, spacing: prominent ? 6 : 3) {

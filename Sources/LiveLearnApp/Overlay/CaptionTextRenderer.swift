@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Solid glyphs with a quiet shadow. Automatic ink adapts to the backdrop; context opacity
-/// affects the fill without turning its contrast protection into a hard outline.
+/// Solid glyphs over a soft halo of the opposite tone. The ink is the user's and never changes
+/// with the picture behind it; the halo is what keeps it readable there, on bright frames and
+/// dark ones alike. A quieter context line fades as one piece, halo and fill together: a
+/// translucent fill over a full halo read as grey letters with darker, smeared edges.
 /// TextRenderer keeps one layout and one accessibility element, including CJK wrapping.
 struct CaptionTextRenderer: TextRenderer {
     struct Edge: Equatable {
@@ -9,14 +11,21 @@ struct CaptionTextRenderer: TextRenderer {
         var width: Double
     }
 
+    /// One blurred copy of the glyphs under the fill.
+    struct Halo: Equatable {
+        var radius: Double
+        var opacity: Double
+        var y: Double = 0
+    }
+
     var edges: [Edge]
-    var shadowHex: UInt32? = nil
-    var shadowRadius: Double = 0
-    var shadowOpacity: Double = 0.68
-    var foregroundOpacity: Double = 1
+    var haloHex: UInt32? = nil
+    var halos: [Halo] = []
+    var lineOpacity: Double = 1
 
     var displayPadding: EdgeInsets {
-        let padding = max(edges.map(\.width).max() ?? 0, shadowRadius * 3) + 1
+        let reach = halos.map { $0.radius * 3 + abs($0.y) }.max() ?? 0
+        let padding = max(edges.map(\.width).max() ?? 0, reach) + 1
         return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
     }
 
@@ -27,21 +36,33 @@ struct CaptionTextRenderer: TextRenderer {
         return blackContrast >= whiteContrast ? 0x000000 : 0xFFFFFF
     }
 
+    /// Two tight passes draw the glyph's edge against any picture; a wide one lifts the whole
+    /// word off busy detail. None of them is a hard outline, and the fill is drawn last.
     static func automatic(hex: String, size: Double, emphasis: Double = 1) -> Self {
         let size = size.isFinite ? min(80, max(8, size)) : 26
-        let contrast = contrastingHex(hex)
-        return Self(edges: [], shadowHex: contrast, shadowRadius: min(1.3, max(0.6, size / 26)),
-                    shadowOpacity: 0.45, foregroundOpacity: emphasis)
+        let unit = size / 26
+        let edge = Halo(radius: min(2.4, max(0.9, 1.15 * unit)), opacity: 0.92)
+        return Self(edges: [], haloHex: contrastingHex(hex),
+                    halos: [edge, edge, Halo(radius: min(8, max(2.6, 4.2 * unit)), opacity: 0.55, y: unit)],
+                    lineOpacity: emphasis)
     }
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        guard lineOpacity < 1 else { return paint(layout, in: &context) }
+        var group = context
+        group.opacity *= lineOpacity
+        group.drawLayer { paint(layout, in: &$0) }
+    }
+
+    private func paint(_ layout: Text.Layout, in context: inout GraphicsContext) {
         for line in layout {
-            if let shadowHex {
-                var shadow = context
-                shadow.addFilter(.shadow(color: Color(hex: shadowHex).opacity(shadowOpacity), radius: shadowRadius,
-                                         x: 0, y: 1, options: .shadowOnly))
-                // Draw the fill last so contrast protection never hollows out the glyph.
-                shadow.draw(line)
+            if let haloHex {
+                for halo in halos {
+                    var shadow = context
+                    shadow.addFilter(.shadow(color: Color(hex: haloHex).opacity(halo.opacity), radius: halo.radius,
+                                             x: 0, y: halo.y, options: .shadowOnly))
+                    shadow.draw(line)
+                }
             }
             for edge in edges where edge.width > 0 {
                 // Offset copies are shadow-only: they do not repaint the glyph's fill.
@@ -54,9 +75,8 @@ struct CaptionTextRenderer: TextRenderer {
                     stroke.draw(line)
                 }
             }
-            var foreground = context
-            foreground.opacity *= foregroundOpacity
-            foreground.draw(line)
+            // Drawn last so contrast protection never hollows out the glyph.
+            context.draw(line)
         }
     }
 }

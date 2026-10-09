@@ -143,10 +143,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // real settings. This only redirects preferences, never the recognition pipeline.
     let settings: AppSettings = {
         let args = CommandLine.arguments
-        if args.contains("--probe-caption-backdrop-access") {
-            print("caption backdrop access: \(CaptionBackdropSampler.hasAccess)")
-            exit(0)
-        }
         if let i = args.firstIndex(of: "--preferences-suite"), i + 1 < args.count,
            args[i + 1].hasPrefix("LiveLearn.testing."), let defaults = UserDefaults(suiteName: args[i + 1]) {
             return AppSettings(defaults: defaults)
@@ -377,10 +373,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? await Task.sleep(for: .seconds(6))
                     let written = self.overlay?.capture(to: directory.appendingPathComponent("caption-\(second)s.png")) ?? false
                     print("caption capture \(second)s: \(written)")
-                    if second == 18 {
-                        _ = await self.overlay?.captureBackdrop(.white, to: directory.appendingPathComponent("caption-white.png"))
-                        _ = await self.overlay?.captureBackdrop(NSColor(white: 0.08, alpha: 1), to: directory.appendingPathComponent("caption-dark.png"))
-                    }
                 }
             }
         }
