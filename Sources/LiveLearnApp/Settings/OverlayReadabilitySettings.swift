@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 字幕外观 › 文字. The presets first, as three equal columns under a "预设" label — each a
+/// 字幕外观 › 文字. The presets first, as equal columns under a "预设" label — each a
 /// specimen in the preset's own face with its name under it, both on the column's left edge,
 /// and the stamped point of light under the name of the preset in use ("自定样式" at the label's
 /// right end when none is). Then the rows, notes under their names; 对比与描边 folds with the
@@ -107,7 +107,7 @@ struct OverlayReadabilitySettings: View {
                 SheetDivider()
                 DictationFold(title: "对比与描边", summary: s.overlayContrastMode.label, expanded: $advanced) {
                     SettingsSheet {
-                        SettingRow("对比模式", note: s.overlayContrastMode == .automatic ? "字色保持不变；按字色自动加一圈反差柔光，明暗画面都能看清。" : "自定描边；设为 0 可关闭。") {
+                        SettingRow("对比模式", note: s.overlayContrastMode == .automatic ? "字色保持不变；底板不足以衬托文字时，自动加一道细描边和投影。" : "自定描边；设为 0 可关闭。") {
                             TextSegment(options: OverlayContrastMode.allCases.map { ($0, $0.label) },
                                         selection: $s.overlayContrastMode, label: "字幕对比模式")
                         }

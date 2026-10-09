@@ -109,8 +109,8 @@ struct SingleLineCaptionView: View {
     var body: some View {
         HStack(spacing: 10) {
             if let label {
-                Text(label).font(.system(size: 11)).foregroundStyle(style.source)
-                    .lineLimit(1).frame(maxWidth: 80)
+                Text(label).font(.system(size: 11)).foregroundStyle(style.label)
+                    .lineLimit(1).frame(maxWidth: 80).textRenderer(style.renderer(size: 11))
             }
             if let content {
                 SingleLineCueText(content: content, settings: settings, style: style, paused: statusText == "已暂停")
@@ -157,8 +157,8 @@ private struct SingleLineRows: View {
                         .foregroundStyle(style.text).lineLimit(1)
                         .textRenderer(style.renderer(size: settings.captionTargetSize))
                 } else {
-                    Text(placeholder).font(.system(size: 13)).foregroundStyle(style.source).lineLimit(1)
-                        .textRenderer(style.renderer(source: true, size: 13))
+                    Text(placeholder).font(.system(size: 13)).foregroundStyle(style.label).lineLimit(1)
+                        .textRenderer(style.renderer(size: 13))
                 }
             }
             .frame(maxWidth: .infinity, alignment: alignment)

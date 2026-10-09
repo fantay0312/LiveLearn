@@ -50,14 +50,15 @@ struct OverlayDragTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
+        settings.overlayOpacity = 0
         let model = AppModel(settings: settings, preview: SampleData.runningSnapshot(includeGap: false))
         let controller = OverlayPanelController(model: model, defaults: defaults)
         controller.install()
         let panel = try #require(controller.verificationWindow)
         defer { panel.orderOut(nil) }
         try await Task.sleep(for: .milliseconds(400))
-        #expect(settings.overlayOpacity == 0 && panel.isVisible)
-        // The block's bottom-left padding: no glyph, no fill.
+        #expect(panel.isVisible)
+        // The panel's bottom-left corner: no glyph, no fill.
         let clear = CGPoint(x: panel.frame.minX + 6, y: panel.frame.minY + 6)
         func landsOnCaption() -> Bool {
             NSWindow.windowNumber(at: clear, belowWindowWithWindowNumber: 0) == panel.windowNumber

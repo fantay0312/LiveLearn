@@ -33,7 +33,7 @@ struct OverlayView: View {
     private var controlsVisible: Bool { (layout?.controlsVisible ?? revealed) || openControl != nil || toolbarFocused || previewControls }
     private var pointerInside: Bool { layout?.pointerInside ?? hoverInside }
     private var shouldAutoHide: Bool { !(layout?.pointerOnToolbar ?? hoverInside) && !toolbarFocused && openControl == nil && !previewControls }
-    /// Unlocked and under the pointer (or in the hand): the block shows the plate it is moved by.
+    /// Unlocked and under the pointer (or in the hand): each lane shows the plate it is moved by.
     private var grabbable: Bool { !model.overlayLocked && (pointerInside || layout?.isDragging == true) }
 
     var body: some View {
@@ -52,14 +52,7 @@ struct OverlayView: View {
                 .contentShape(Rectangle())
                 .onHover { if $0 { revealControls() } }
             block(style)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 14)
                 .frame(maxWidth: .infinity)
-                .background {
-                    RoundedRectangle(cornerRadius: LLMetrics.Radius.overlay, style: .continuous)
-                        .fill(style.plate(grabbable: grabbable))
-                        .animation(LLMotion.hover(reduceMotion), value: grabbable)
-                }
         }
         .frame(width: width)
         .frame(maxWidth: width == nil ? LLMetrics.overlayMaxWidth : nil)
@@ -128,17 +121,18 @@ struct OverlayView: View {
         let lanes = model.settings.captionPresentation == .singleLine
             ? SingleLineCaptionContent.lane(from: model.lanes, tails: model.laneTails).map { [$0] } ?? []
             : model.lanes
-        return VStack(alignment: .center, spacing: 20) {
+        return VStack(alignment: .center, spacing: 8) {
             if lanes.isEmpty {
                 LaneBlock(lane: nil, current: nil, previous: nil, settings: model.settings,
-                          style: style, statusText: model.statusText, showsLabel: false, readingWidth: width)
+                          style: style, statusText: model.statusText, showsLabel: false, readingWidth: width,
+                          grabbable: grabbable)
             } else {
                 ForEach(lanes) { lane in
                     let tail = model.laneTails[lane.id]
                     LaneBlock(lane: lane, current: tail?.current, previous: tail?.previous,
                               settings: model.settings, style: style,
                               statusText: laneStatus(lane, tail: tail), showsLabel: model.lanes.count > 1,
-                              earlier: tail?.earlier, readingWidth: width)
+                              earlier: tail?.earlier, readingWidth: width, grabbable: grabbable)
                 }
             }
         }

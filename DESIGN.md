@@ -162,24 +162,40 @@ boundaries using measured font widths, and advance at a reading pace; a source l
 row is cut the same way and walked alongside, so neither row ever wraps. Pausing holds the cue.
 The panel height and position stay stable; complete translations remain in the transcript.
 
+The default caption is white on a dark plate with its source in gold (2026-10-09, after the
+clear block with warm-white text was judged neither good-looking nor easy to read at a glance).
+The plate is #12110F at 78 %, 14 pt round with a 1 px inner hairline, as wide as the caption
+width setting and never as wide as the words, so it does not resize while a sentence grows. The
+translation is #FFFFFF semibold; the source is #F3D58C regular. The two languages are told apart
+by colour, not by one being a fainter copy of the other, and words still in the speaker's
+language wear the source ink wherever they stand. Each lane has its own plate. The one line
+kept for untranslated opening words and the lane's status sits under the plate, off it, so the
+plate holds only what is being read and never carries an empty band. Captions still wearing the
+previous default take this look once; any other saved style stays. Presets, in order: 深色底板
+(this look), 通透白字 (no plate), 纸感阅读, 楷体墨字.
+
 Caption ink is the user's and never changes on its own (2026-10-09, replacing the 2026-09-21
 backdrop sampling). Sampling the picture behind the caption and switching between light and
 dark ink made the colour jump with every scene change, and dimming a translation that was a
 revision behind its source made the live line pulse with every partial result; both are gone,
-and with them the screen-recording permission the sampler needed. Automatic contrast is now a
-soft halo of the tone opposite the ink, drawn under the solid glyphs: two tight passes for the
-edge and one wide pass to lift the word off busy detail, never a hard outline. It reads on
-bright, dark and mixed frames alike. A quieter context line fades as one piece, halo and fill
-together. Manual style keeps the user's own outline. Reserve stable slots for prior, current and
-incoming cues. Stronger system contrast may lift context opacity. The user's background and
-type preferences are not reset by this refinement.
+and with them the screen-recording permission the sampler needed. Every ink is solid: a source
+that follows the translation is a tint of it (24 % of the way to the opposite tone) and the
+labels a further step, never an opacity. On a plate that keeps the ink at 4.5 : 1 over the
+frame worst for it (white under light ink) the glyphs are drawn plain. Off the plate, or on one
+too clear for that, automatic contrast draws a film subtitle's edge in the tone opposite the
+ink: a contour of about 3.5 % of the type size at 80 % and a short shadow under it. The blurred
+glow tried first kept the letters readable but smeared grey around them on bright frames. A
+quieter context line fades as one piece, edge and fill together. Manual style keeps the user's
+own outline. Reserve stable slots for prior, current and incoming cues. Stronger system
+contrast may lift context opacity.
 
 An unlocked caption is moved by pressing anywhere on its block. A clear window's transparent
 pixels let a press fall through to the window below unless `ignoresMouseEvents` has been given
 a value, so the panel sets it up front and the lock alone decides: unlocked takes the press,
-locked passes it on (the toolbar strip still reveals the way to unlock). Under the pointer, or
-in the hand, the block shows a plate at no less than 34 %: the tone opposite the ink on a clear
-block, the user's own background otherwise. Window Server owns overlay dragging. During a drag,
+locked passes it on (the toolbar strip still reveals the way to unlock). The default plate is
+its own handle; a caption cleared below 34 % shows a plate at that strength under the pointer
+or in the hand, in the tone opposite the ink when it has no fill of its own. Window Server owns
+overlay dragging. During a drag,
 caption-height updates are retained but do not reset the window frame. On release, the
 controller adopts the actual position, applies the latest size, and saves the location once.
 Position persistence must never run for every move or for programmatic caption-height changes.

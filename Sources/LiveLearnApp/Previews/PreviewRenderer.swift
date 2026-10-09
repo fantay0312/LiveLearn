@@ -638,6 +638,8 @@ enum PreviewRenderer {
         let size = CGSize(width: 880, height: 300)
         for preset in ["white", "kai-black", "mixed", "manual"] {
             settings.resetOverlayStyle()
+            settings.overlayOpacity = 0
+            settings.overlaySourceHex = ""
             settings.overlayTextHex = preset == "white" ? "FFFFFF" : "000000"
             if preset == "kai-black" { settings.overlayFontFamily = OverlayTypography.kaiFamily ?? ""; settings.overlayTextWeight = .regular }
             if preset == "mixed" { settings.overlayTextHex = "FFCD38"; settings.overlaySourceHex = "141414" }
@@ -649,8 +651,10 @@ enum PreviewRenderer {
         }
         settings.resetOverlayStyle()
         let model = AppModel(settings: settings, preview: SampleData.runningSnapshot())
+        settings.overlayOpacity = 0
         try render(OverlayView(forcedWidth: 880).environment(model), theme: .dark, size: CGSize(width: 880, height: 280),
                    to: directory.appendingPathComponent("transparent-overlay.png"))
+        settings.resetOverlayStyle()
         settings.requestedSettingsTab = .appearance
         try render(SettingsView().environment(model), theme: .light, size: SettingsView.size,
                    to: directory.appendingPathComponent("settings.png"))
@@ -683,12 +687,16 @@ enum PreviewRenderer {
                    size: VocabularyWindowView.size, to: directory.appendingPathComponent("vocabulary-corrections.png"))
         settings.overlayFontFamily = OverlayTypography.kaiFamily ?? ""
         settings.overlayTextHex = "000000"
+        settings.overlaySourceHex = ""
+        settings.overlayOpacity = 0
         settings.captionTargetSize = 40
         settings.captionSourceSize = 28
         settings.showPreviousLine = true
         try render(CaptionPreviewSurface(settings: settings, scene: .highContrast), theme: .light,
                    size: CGSize(width: 480, height: 520), to: directory.appendingPathComponent("kai-large-narrow.png"))
         settings.resetOverlayStyle()
+        settings.overlaySourceHex = ""
+        settings.overlayOpacity = 0
         let frames = directory.appendingPathComponent("frames")
         try FileManager.default.createDirectory(at: frames, withIntermediateDirectories: true)
         let blackDefaults = UserDefaults(suiteName: suite + ".black")!
@@ -696,6 +704,8 @@ enum PreviewRenderer {
         let black = AppSettings(defaults: blackDefaults)
         black.overlayFontFamily = OverlayTypography.kaiFamily ?? ""
         black.overlayTextHex = "000000"
+        black.overlaySourceHex = ""
+        black.overlayOpacity = 0
         black.overlayTextWeight = .regular
         for (sceneIndex, scene) in CaptionPreviewScene.allCases.enumerated() {
             for frame in 0..<24 {
@@ -761,7 +771,9 @@ enum PreviewRenderer {
         try render(VideoBackdrop(bright: false) { OverlayView(forcedWidth: overlayWidth, previewControls: true).environment(subtitles) }, theme: .dark, size: CGSize(width: 1280, height: 420), to: directory.appendingPathComponent("overlay-locked-controls.png"))
         subtitles.overlayLocked = false
         // No backdrop: the PNG alpha verifies that 0% leaves no panel, border or shadow.
+        settings.overlayOpacity = 0
         try render(OverlayView(forcedWidth: overlayWidth).environment(subtitles), theme: .dark, size: CGSize(width: overlayWidth, height: 260), to: directory.appendingPathComponent("overlay-transparent.png"))
+        settings.resetOverlayStyle()
         settings.captionTargetSize = 40
         settings.captionSourceSize = 28
         try render(VideoBackdrop(bright: true) { OverlayView(forcedWidth: 480, previewControls: true).environment(subtitles) }, theme: .light, size: CGSize(width: 800, height: 520), to: directory.appendingPathComponent("overlay-narrow-large-type.png"))

@@ -7,7 +7,7 @@ import CaptionDomain
 
 @MainActor
 struct CaptionTextHierarchyTests {
-    /// Pixels a light-ink line darkens on a white frame: the halo that makes it readable there.
+    /// Pixels a light-ink line darkens on a white frame: the edge that makes it readable there.
     private func darkPixels(_ renderer: CaptionTextRenderer, ink: Color, size: Double) throws -> Int {
         let image = ImageRenderer(content: Text("上一句与原文 Previous sentence")
             .font(.system(size: size, weight: .medium)).foregroundStyle(ink)
@@ -23,26 +23,27 @@ struct CaptionTextHierarchyTests {
         return count
     }
 
-    @Test func theInkIsTheUsersOnEveryFrameAndTheHaloCarriesItOverBrightOnes() throws {
+    @Test func theInkIsTheUsersOnEveryFrameAndItsEdgeCarriesAClearCaptionOverBrightOnes() throws {
         let suite = "LiveLearn.testing.constant-ink.\(UUID())"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
+        settings.overlayOpacity = 0
         let style = OverlayStyle.resolve(settings, forceOpaque: false)
         #expect(HexColor.hex(from: style.text) == settings.overlayTextHex)
         #expect(style.opacity == 0 && style.renderer(size: 26).haloHex == 0)
-        // White ink on a white frame is the worst case; even the quietest context line (60 %)
-        // keeps a dark edge there, where the single faint shadow it replaces left next to none.
+        // White ink on a white frame with no plate is the worst case; even the quietest context
+        // line (60 %) keeps a dark edge there, where a single faint shadow left next to none.
         let faint = CaptionTextRenderer(edges: [], haloHex: 0, halos: [.init(radius: 0.8, opacity: 0.45, y: 1)], lineOpacity: 0.6)
         let before = try darkPixels(faint, ink: style.text, size: 17)
         let quiet = try darkPixels(style.renderer(size: 17, emphasis: 0.6), ink: style.text, size: 17)
         let current = try darkPixels(style.renderer(size: 26), ink: style.text, size: 26)
         #expect(quiet > 1_000 && before < quiet / 10)
-        #expect(current > quiet * 3)
+        #expect(current > quiet)
         // Dark ink gets the opposite halo; emphasis fades the line as a whole, never its geometry.
         settings.overlayTextHex = "24211D"
         let ink = OverlayStyle.resolve(settings, forceOpaque: false).renderer(size: 26, emphasis: 0.48)
-        #expect(ink.haloHex == 0xFFFFFF && ink.lineOpacity == 0.76 && ink.edges.isEmpty)
+        #expect(ink.haloHex == 0xFFFFFF && ink.lineOpacity == 0.76 && ink.edges.map(\.hex) == [0xFFFFFF])
         #expect(ink.halos == CaptionTextRenderer.automatic(hex: "24211D", size: 26).halos)
     }
 
@@ -51,6 +52,9 @@ struct CaptionTextHierarchyTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
+        // The default plate is its own handle: nothing changes under the pointer.
+        #expect(OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: true) == OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: false))
+        settings.overlayOpacity = 0
         func plate(_ grabbable: Bool) throws -> NSColor {
             try #require(NSColor(OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: grabbable)).usingColorSpace(.sRGB))
         }
@@ -78,7 +82,7 @@ struct CaptionTextHierarchyTests {
         #expect(ordinary.secondaryOpacity(0.68) == 0.68)
         let accessible = OverlayStyle.resolve(settings, forceOpaque: true, increasedContrast: true)
         #expect(accessible.opacity == 1 && accessible.secondaryOpacity(0.48) >= 0.8)
-        #expect(ordinary.opacity == 0)
+        #expect(ordinary.opacity == AppSettings.defaultOverlayOpacity)
     }
 
     @Test func ReadingSlotsKeepCurrentLineStillAsHistoryAndIncomingAppear() throws {

@@ -35,7 +35,7 @@ struct OverlaySettingsTests {
             settings.overlayOpacity = 8
             #expect(OverlayStyle.resolve(settings, forceOpaque: false).opacity == 1)
             settings.overlayOpacity = .nan
-            #expect(OverlayStyle.resolve(settings, forceOpaque: false).opacity == 0)
+            #expect(OverlayStyle.resolve(settings, forceOpaque: false).opacity == AppSettings.defaultOverlayOpacity)
             settings.overlayOpacity = 0
             #expect(OverlayStyle.resolve(settings, forceOpaque: true).opacity == 1)
             #expect(OverlayStyle.resolve(settings, forceOpaque: false, increasedContrast: true).opacity == 1)
@@ -50,7 +50,7 @@ struct OverlaySettingsTests {
             let restored = AppSettings(defaults: defaults)
             #expect(restored.overlayOpacity == 0.84 && restored.showPreviousLine)
             restored.resetOverlayStyle()
-            #expect(restored.overlayOpacity == 0 && !restored.overlayOpaque)
+            #expect(restored.overlayOpacity == AppSettings.defaultOverlayOpacity && !restored.overlayOpaque)
             #expect(!restored.showBreathLine && !restored.showPreviousLine)
         }
     }

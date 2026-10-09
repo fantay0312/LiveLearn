@@ -11,10 +11,10 @@ import CaptionDomain
 /// What changed from the preview it replaced (round 11's `OverlayReadabilityPreview`): the
 /// dark scene is a neutral #0D0E10 instead of a navy #101419 (a small echo of the rejected navy
 /// ground; `CaptionPreviewBackdrop`, which the stage and the fixture renders share, now draws
-/// it); the caption stands where the overlay stands — its block anchored 20 pt from the
-/// stage's bottom, or its top when 默认位置 is 顶部 — and without the empty slot the overlay keeps
-/// under the sentence for a line that has not arrived, which only pushed the sentence into the
-/// upper half; the stage is 10 pt round like the app's other sheets (it was an off-scale 8);
+/// it); the caption stands where the overlay stands — its plate anchored 20 pt from the
+/// stage's bottom, or its top when 默认位置 is 顶部 — and without the line the overlay keeps
+/// under the plate for words that have not been translated, which is always empty here;
+/// the stage is 10 pt round like the app's other sheets (it was an off-scale 8);
 /// 播放 is a word, not a glyph and a word; and the facts are `ink3`, one step under the caption
 /// they describe.
 ///
@@ -65,8 +65,8 @@ struct AppearanceCaptionStage: View {
 /// The stage itself: the backdrop of the chosen scene and the caption block anchored where the
 /// overlay sits, `inset` in from that edge. The block is laid out at the overlay's width (the
 /// same `layoutWidth` clamp as `CaptionPreviewSurface`) and scaled down to fit both ways — never
-/// up — so wrapping, fonts, colours and the previous line are exactly the overlay's. Sample,
-/// backdrop and panel are `CaptionPreviewSurface`'s own, so the two previews cannot drift apart.
+/// up — so wrapping, fonts, colours, the plate and the previous line are exactly the overlay's.
+/// Sample and backdrop are `CaptionPreviewSurface`'s own, so the two previews cannot drift apart.
 private struct CaptionStageSurface: View {
     let settings: AppSettings
     let scene: CaptionPreviewScene
@@ -77,13 +77,11 @@ private struct CaptionStageSurface: View {
     /// From the anchored edge to the block, and the least air on the other three sides.
     private static let inset: CGFloat = 20
 
-    /// The layered block's empty tail: the slot `LaneBlock` keeps under the current sentence for
-    /// the next line, and the stack spacing before it. The stage's sentence is final and
-    /// has no status text, so that slot is always empty here; the stage leaves it out (see
-    /// `block`). Under the breath line the slot sits between sentence and line, so it stays.
+    /// The layered block's empty tail: the line `LaneBlock` keeps under its plate. The stage's
+    /// sentence is translated and has no status text, so that line is always empty here and the
+    /// stage leaves it out (see `block`).
     static func emptyTail(_ settings: AppSettings) -> CGFloat {
-        guard settings.captionPresentation == .layered, !settings.showBreathLine else { return 0 }
-        return LaneBlock.stackSpacing + LaneBlock.incomingSlotHeight(settings)
+        settings.captionPresentation == .layered ? LaneBlock.tailHeight(settings) : 0
     }
 
     var body: some View {
@@ -112,13 +110,11 @@ private struct CaptionStageSurface: View {
     }
 
     /// The overlay's block with its empty tail taken out of the layout (it is clear, so nothing
-    /// that draws is lost): the panel's padding and fill close under the sentence, and the
-    /// anchoring above lands the sentence itself 20 pt off the stage's edge.
+    /// that draws is lost): the anchoring above lands the plate itself 20 pt off the stage's edge.
     private func block(style: OverlayStyle) -> some View {
         let segments = CaptionPreviewSurface.segments
         return LaneBlock(lane: nil, current: segments.last, previous: segments.dropLast().last,
                          settings: settings, style: style, statusText: "")
             .padding(.bottom, -Self.emptyTail(settings))
-            .captionPanel(style)
     }
 }

@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// Solid glyphs over a soft halo of the opposite tone. The ink is the user's and never changes
-/// with the picture behind it; the halo is what keeps it readable there, on bright frames and
-/// dark ones alike. A quieter context line fades as one piece, halo and fill together: a
-/// translucent fill over a full halo read as grey letters with darker, smeared edges.
+/// Solid glyphs with an edge of the opposite tone. The ink is the user's and never changes with
+/// the picture behind it; off a plate, the edge is what keeps it readable there, on bright
+/// frames and dark ones alike. A quieter context line fades as one piece, edge and fill
+/// together: a translucent fill over a full edge read as grey letters with darker, smeared rims.
 /// TextRenderer keeps one layout and one accessibility element, including CJK wrapping.
 struct CaptionTextRenderer: TextRenderer {
     struct Edge: Equatable {
         var hex: UInt32
         var width: Double
+        var opacity: Double = 1
     }
 
     /// One blurred copy of the glyphs under the fill.
@@ -36,14 +37,14 @@ struct CaptionTextRenderer: TextRenderer {
         return blackContrast >= whiteContrast ? 0x000000 : 0xFFFFFF
     }
 
-    /// Two tight passes draw the glyph's edge against any picture; a wide one lifts the whole
-    /// word off busy detail. None of them is a hard outline, and the fill is drawn last.
+    /// The look of a film subtitle: a thin, crisp contour and a short shadow under it, both of
+    /// the tone opposite the ink. The blurred glow this replaces kept the letters readable but
+    /// smeared grey around them on bright frames.
     static func automatic(hex: String, size: Double, emphasis: Double = 1) -> Self {
         let size = size.isFinite ? min(80, max(8, size)) : 26
-        let unit = size / 26
-        let edge = Halo(radius: min(2.4, max(0.9, 1.15 * unit)), opacity: 0.92)
-        return Self(edges: [], haloHex: contrastingHex(hex),
-                    halos: [edge, edge, Halo(radius: min(8, max(2.6, 4.2 * unit)), opacity: 0.55, y: unit)],
+        let tone = contrastingHex(hex)
+        return Self(edges: [Edge(hex: tone, width: min(1.6, max(0.7, size * 0.035)), opacity: 0.8)],
+                    haloHex: tone, halos: [Halo(radius: min(4, max(1.4, size * 0.085)), opacity: 0.5, y: size * 0.045)],
                     lineOpacity: emphasis)
     }
 
@@ -69,7 +70,7 @@ struct CaptionTextRenderer: TextRenderer {
                 for direction in 0..<12 {
                     let angle = Double(direction) * .pi / 6
                     var stroke = context
-                    stroke.addFilter(.shadow(color: Color(hex: edge.hex), radius: 0,
+                    stroke.addFilter(.shadow(color: Color(hex: edge.hex).opacity(edge.opacity), radius: 0,
                                              x: cos(angle) * edge.width, y: sin(angle) * edge.width,
                                              options: .shadowOnly))
                     stroke.draw(line)

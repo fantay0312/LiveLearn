@@ -103,12 +103,13 @@ struct CaptionPresentationTests {
         let layered = height()
         settings.captionPresentation = .singleLine
         let bilingual = height()
-        #expect(bilingual == SingleLineCaptionView.lineHeight(fontSize: 26) + 4 + SingleLineCaptionView.sourceLineHeight(fontSize: 17))
-        #expect(bilingual == SingleLineCaptionView.height(settings) && bilingual < layered / 2)
+        let plate = 2 * LaneBlock.platePadding.height
+        #expect(bilingual == plate + SingleLineCaptionView.lineHeight(fontSize: 26) + 4 + SingleLineCaptionView.sourceLineHeight(fontSize: 17))
+        #expect(bilingual == plate + SingleLineCaptionView.height(settings) && bilingual < layered)
         settings.showSourceInOverlay = false
         let compact = height()
-        #expect(compact == SingleLineCaptionView.lineHeight(fontSize: 26))
-        #expect(compact < layered / 3)
+        #expect(compact == plate + SingleLineCaptionView.lineHeight(fontSize: 26))
+        #expect(compact < layered / 2)
     }
 
     @Test func twoAudioLanesChooseOneLatestTranslatedLane() throws {
@@ -125,8 +126,10 @@ struct CaptionPresentationTests {
         #expect(SingleLineCaptionContent.lane(from: model.lanes, tails: tails)?.id == "remote")
     }
 
-    /// Review renders: both presentations with a sentence still being spoken, over a dark frame,
-    /// a bright one and a busy one, plus the plate an unlocked caption shows under the pointer.
+    /// Review renders: the default look and the clear preset, in both presentations, with a
+    /// sentence still being spoken, over photographs (the system wallpapers' thumbnails, where
+    /// present) and a white page; plus the line under the plate, two lanes, and the plate a
+    /// clear caption shows under the pointer.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["LIVELEARN_RENDER_CAPTION_MODES"] != nil))
     func renderBothPresentations() throws {
         let output = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["LIVELEARN_RENDER_CAPTION_MODES"]))
@@ -135,9 +138,8 @@ struct CaptionPresentationTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
-        settings.showPreviousLine = true
-        settings.showSourceInOverlay = true
         var snapshot = SampleData.runningSnapshot(includeGap: false)
+        let opening = AppModel(settings: settings, preview: snapshot)
         if case .segment(var live) = try #require(snapshot.captions.items.last),
            var partial = snapshot.captions.segments.dropLast().last?.translation {
             partial.text = "在我们分成两组之前，还有什么问题"
@@ -147,31 +149,49 @@ struct CaptionPresentationTests {
             snapshot.captions.items[snapshot.captions.items.count - 1] = .segment(live)
         }
         let model = AppModel(settings: settings, preview: snapshot)
+        let dual = AppModel(settings: settings, preview: SampleData.runningSnapshot(dual: true, includeGap: false))
         let hovered = OverlayLayout()
         hovered.pointerInside = true
-        let backdrops: [(String, AnyView)] = [
-            ("dark", AnyView(Color(hex: 0x0D0E10))),
-            ("bright", AnyView(Color(hex: 0xF7F7F5))),
-            ("busy", AnyView(LinearGradient(stops: [.init(color: Color(hex: 0xF2E9D8), location: 0), .init(color: Color(hex: 0x3B6EA5), location: 0.35),
-                                                    .init(color: Color(hex: 0xFFFFFF), location: 0.5), .init(color: Color(hex: 0x1B1B1F), location: 0.7),
-                                                    .init(color: Color(hex: 0xE8C547), location: 1)], startPoint: .leading, endPoint: .trailing))),
-        ]
-        func write(_ view: some View, _ name: String) throws {
-            let renderer = ImageRenderer(content: ThemedRoot(forced: .stellar) { view }.environment(\.staticRender, true))
+        func photo(_ name: String, fallback: UInt32) -> AnyView {
+            guard let image = NSImage(contentsOfFile: "/System/Library/Desktop Pictures/.thumbnails/\(name).heic") else { return AnyView(Color(hex: fallback)) }
+            return AnyView(Image(nsImage: image).resizable().aspectRatio(contentMode: .fill))
+        }
+        let page = AnyView(Color.white.overlay(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 11) {
+                ForEach(0..<12, id: \.self) { row in
+                    RoundedRectangle(cornerRadius: 2).fill(Color.black.opacity(row == 0 ? 0.8 : 0.45))
+                        .frame(width: row == 0 ? 320 : CGFloat(860 - row * 29), height: row == 0 ? 16 : 9)
+                }
+            }.padding(24)
+        })
+        let backdrops: [(String, AnyView)] = [("coast", photo("Big Sur Coastline", fallback: 0x3B6EA5)), ("clouds", photo("Catalina Clouds", fallback: 0xC9C2B8)),
+                                              ("night", photo("Big Sur Night Grasses", fallback: 0x0D0E10)), ("page", page)]
+        func write(_ model: AppModel, _ name: String, layout: OverlayLayout? = nil, on backdrop: AnyView) throws {
+            let width = settings.captionDisplayWidth
+            let overlay = OverlayView(forcedWidth: width).environment(model).environment(layout).padding(.horizontal, 40).padding(.bottom, 24)
+            let view = ThemedRoot(forced: .stellar) { overlay.background { backdrop }.clipped() }.environment(\.staticRender, true)
+            let renderer = ImageRenderer(content: view)
             renderer.scale = 2
             let cg = try #require(renderer.cgImage)
             let png = try #require(NSBitmapImageRep(cgImage: cg).representation(using: .png, properties: [:]))
             try png.write(to: output.appendingPathComponent("\(name).png"))
         }
-        for mode in CaptionPresentation.allCases {
-            settings.captionPresentation = mode
-            for (name, backdrop) in backdrops {
-                try write(OverlayView(forcedWidth: settings.captionDisplayWidth).environment(model).background(backdrop),
-                          "\(mode.rawValue)-\(name)")
+        for preset in [OverlayAppearancePreset.plate, .clear] {
+            preset.apply(to: settings)
+            for mode in CaptionPresentation.allCases {
+                settings.captionPresentation = mode
+                for (name, backdrop) in backdrops {
+                    try write(model, "\(preset.rawValue)-\(mode.rawValue)-\(name)", on: backdrop)
+                }
             }
-            try write(OverlayView(forcedWidth: settings.captionDisplayWidth).environment(model).environment(hovered)
-                .background(backdrops[2].1), "\(mode.rawValue)-hover")
+            settings.captionPresentation = .layered
+            settings.showPreviousLine = true
+            try write(model, "\(preset.rawValue)-previous", on: backdrops[0].1)
+            try write(opening, "\(preset.rawValue)-opening", on: backdrops[1].1)
+            try write(dual, "\(preset.rawValue)-dual", on: backdrops[2].1)
+            settings.showPreviousLine = false
         }
+        try write(model, "clear-hover", layout: hovered, on: backdrops[0].1)
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["LIVELEARN_VERIFY_CAPTION_CUES"] != nil))
@@ -190,8 +210,8 @@ struct CaptionPresentationTests {
         segment.translation?.text = "字幕固定在画面底部，一句一句地切换。长句会自动分段，始终只占一行，让画面成为主角。"
         let style = OverlayStyle.resolve(settings, forceOpaque: false)
         let view = LaneBlock(lane: nil, current: segment, previous: nil, settings: settings, style: style, statusText: "")
-            .padding(.horizontal, 24).frame(width: 640, height: 70)
-        let panel = NSPanel(contentRect: NSRect(x: 100, y: 100, width: 640, height: 70),
+            .frame(width: 640, height: 110)
+        let panel = NSPanel(contentRect: NSRect(x: 100, y: 100, width: 640, height: 110),
                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.level = .floating
