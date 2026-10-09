@@ -44,10 +44,9 @@ struct OverlayToolbar: View {
                 Label("原文", systemImage: model.settings.showSourceInOverlay ? "captions.bubble.fill" : "captions.bubble")
             }
             .accessibilityValue(model.settings.showSourceInOverlay ? "显示" : "隐藏")
-            .disabled(model.settings.captionPresentation == .singleLine)
             .accessibilityAddTraits(.isToggle)
             .modifier(OverlayControlFocus(keyboard: $focusedControl, accessibility: $accessibleControl, id: "source"))
-            .help(model.settings.captionPresentation == .singleLine ? "单行字幕只显示译文；分层显示可查看原文" : model.settings.showSourceInOverlay ? "隐藏原文，只显示译文" : "同时显示原文与译文")
+            .help(model.settings.showSourceInOverlay ? "隐藏原文，只显示译文" : "同时显示原文与译文")
             Button { openControl = .type } label: {
                 Image(systemName: "textformat.size").frame(width: 24)
             }
@@ -72,7 +71,7 @@ struct OverlayToolbar: View {
                 .accessibilityValue(model.overlayLocked ? "已锁定" : "未锁定")
                 .accessibilityAddTraits(.isToggle)
                 .modifier(OverlayControlFocus(keyboard: $focusedControl, accessibility: $accessibleControl, id: "lock"))
-                .help(model.overlayLocked ? "解除锁定，可拖动字幕" : "锁定后正文点击穿透；移到顶部可解锁")
+                .help(model.overlayLocked ? "解除锁定，可拖动字幕" : "按住字幕任意位置可拖动；锁定后点击穿透，移到顶部可解锁")
             Button { model.hideOverlay() } label: { Image(systemName: "xmark").frame(width: 18) }
                 .accessibilityLabel("隐藏字幕")
                 .modifier(OverlayControlFocus(keyboard: $focusedControl, accessibility: $accessibleControl, id: "close"))
@@ -155,10 +154,8 @@ private struct OverlayTypeEditor: View {
                 get: { HexColor.color(settings.overlayTextHex, fallback: LLOverlay.text) },
                 set: { settings.overlayTextHex = HexColor.hex(from: $0) }), supportsOpacity: false)
             PaperChoiceRow(label: "对比模式", selection: $settings.overlayContrastMode, options: OverlayContrastMode.allCases, title: { $0.label })
-            CaptionAutoContrastPermission()
             OverlaySlider(title: "译文字号", value: $settings.captionTargetSize, range: 18...40, step: 1, suffix: " pt")
             OverlaySlider(title: "原文字号", value: $settings.captionSourceSize, range: 12...28, step: 1, suffix: " pt")
-                .disabled(settings.captionPresentation == .singleLine)
             OverlaySlider(title: "字幕宽度", value: $settings.captionDisplayWidth, range: 480...1400, step: 10, suffix: " pt")
             Divider()
             Toggle("显示上一句译文", isOn: $settings.showPreviousLine)
@@ -209,7 +206,7 @@ private struct OverlayOpacityEditor: View {
             .disabled(systemForcesOpaque)
             Divider()
             Toggle("始终不透明", isOn: $settings.overlayOpaque)
-            Text(systemForcesOpaque ? "系统的减少透明度或增强对比度已开启，当前使用不透明背景。" : "只调整字幕背景，不会淡化文字。拖动字幕文字可移动位置。")
+            Text(systemForcesOpaque ? "系统的减少透明度或增强对比度已开启，当前使用不透明背景。" : "只调整字幕背景，不会淡化文字。按住字幕任意位置可拖动。")
                 .font(.system(size: 12)).foregroundStyle(theme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }

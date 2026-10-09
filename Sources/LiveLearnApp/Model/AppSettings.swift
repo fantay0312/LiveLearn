@@ -92,8 +92,8 @@ enum CaptionPresentation: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String { self == .layered ? "分层显示" : "单行字幕" }
     var note: String {
-        self == .layered ? "当前句突出显示，上下文与原文分层呈现。"
-            : "像视频字幕一样逐句切换，长句自动分段；始终只显示一行。"
+        self == .layered ? "正在讲的这一句突出显示，上一句与原文分层呈现。"
+            : "像视频字幕一样逐句切换，长句自动分段；译文只占一行，原文可显示在其下。"
     }
 }
 
@@ -255,7 +255,7 @@ final class AppSettings {
     var overlayBackgroundHex: String { didSet { defaults.set(overlayBackgroundHex, forKey: "overlayBackgroundHex") } }
     var overlayOpacity: Double { didSet { defaults.set(overlayOpacity, forKey: "overlayOpacity") } }
     var overlayTextHex: String { didSet { defaults.set(overlayTextHex, forKey: "overlayTextHex") } }
-    /// Empty means "derive from the translation color at 70%".
+    /// Empty means "follow the translation": a quieter tint of its colour.
     var overlaySourceHex: String { didSet { defaults.set(overlaySourceHex, forKey: "overlaySourceHex") } }
     var overlayWidth: Double { didSet { defaults.set(overlayWidth, forKey: "overlayWidth") } }
     var overlayTextWeight: OverlayTextWeight { didSet { defaults.set(overlayTextWeight.rawValue, forKey: "overlayTextWeight") } }
@@ -267,19 +267,41 @@ final class AppSettings {
     var overlayOutlineHex: String { didSet { defaults.set(overlayOutlineHex, forKey: "overlayOutlineHex") } }
     var overlayOutlineWidth: Double { didSet { defaults.set(overlayOutlineWidth, forKey: "overlayOutlineWidth") } }
 
-    static let defaultOverlayBackgroundHex = "12110F"
-    static let defaultOverlayOpacity = 0.0
-    static let defaultOverlayTextHex = "F4F0E8"
+    // The default look: white translation over its source in gold, on a dark plate. The two
+    // languages are told apart by colour, and the plate carries both over any picture.
+    nonisolated static let defaultOverlayBackgroundHex = "12110F"
+    static let defaultOverlayOpacity = 0.78
+    static let defaultOverlayTextHex = "FFFFFF"
+    static let defaultOverlaySourceHex = "F3D58C"
+    static let defaultOverlayTextWeight = OverlayTextWeight.semibold
     static let defaultOverlayWidth = 880.0
+
+    /// Captions still wearing the look that shipped before 2026-10-09 (clear block, warm-white
+    /// medium text, source at 72 % of it), whether never styled or reset to it, take the current
+    /// default once. Any other saved style is the user's and stays as it is.
+    private static func adoptCurrentCaptionLook(_ defaults: UserDefaults) {
+        guard defaults.integer(forKey: "captionLook") < 2 else { return }
+        defaults.set(2, forKey: "captionLook")
+        let previousDefault = (defaults.object(forKey: "overlayOpacity") as? Double ?? 0) == 0
+            && (defaults.string(forKey: "overlayTextHex") ?? "F4F0E8").uppercased() == "F4F0E8"
+            && (defaults.string(forKey: "overlaySourceHex") ?? "").isEmpty
+            && (defaults.string(forKey: "overlayTextWeight") ?? "medium") == "medium"
+            && (defaults.string(forKey: "overlayFontFamily") ?? "").isEmpty
+            && (defaults.string(forKey: "overlayBackgroundHex") ?? defaultOverlayBackgroundHex).uppercased() == defaultOverlayBackgroundHex
+            && (defaults.string(forKey: "overlayContrastMode") ?? "automatic") == "automatic"
+            && !(defaults.object(forKey: "overlayOpaque") as? Bool ?? false)
+        guard previousDefault else { return }
+        for key in ["overlayOpacity", "overlayTextHex", "overlaySourceHex", "overlayTextWeight"] { defaults.removeObject(forKey: key) }
+    }
 
     func resetOverlayStyle() {
         overlayBackgroundHex = Self.defaultOverlayBackgroundHex
         overlayOpacity = Self.defaultOverlayOpacity
         overlayTextHex = Self.defaultOverlayTextHex
-        overlaySourceHex = ""
+        overlaySourceHex = Self.defaultOverlaySourceHex
         overlayWidth = Self.defaultOverlayWidth
         singleLineWidth = 640
-        overlayTextWeight = .medium
+        overlayTextWeight = Self.defaultOverlayTextWeight
         overlayFontFamily = ""
         overlayTextAlignment = .center
         overlayLineSpacing = .standard
@@ -353,13 +375,14 @@ final class AppSettings {
         geminiModel = defaults.string(forKey: "geminiModel") ?? "gemini-2.5-flash"
         cloudPartialTranslation = defaults.object(forKey: "cloudPartialTranslation") as? Bool ?? false
         hotKeys = defaults.dictionary(forKey: "hotKeys") as? [String: [Int]] ?? [:]
+        Self.adoptCurrentCaptionLook(defaults)
         overlayOpaque = defaults.object(forKey: "overlayOpaque") as? Bool ?? false
         overlayBackgroundHex = defaults.string(forKey: "overlayBackgroundHex") ?? Self.defaultOverlayBackgroundHex
         overlayOpacity = defaults.object(forKey: "overlayOpacity") as? Double ?? Self.defaultOverlayOpacity
         overlayTextHex = defaults.string(forKey: "overlayTextHex") ?? Self.defaultOverlayTextHex
-        overlaySourceHex = defaults.string(forKey: "overlaySourceHex") ?? ""
+        overlaySourceHex = defaults.string(forKey: "overlaySourceHex") ?? Self.defaultOverlaySourceHex
         overlayWidth = defaults.object(forKey: "overlayWidth") as? Double ?? Self.defaultOverlayWidth
-        overlayTextWeight = OverlayTextWeight(rawValue: defaults.string(forKey: "overlayTextWeight") ?? "") ?? .medium
+        overlayTextWeight = OverlayTextWeight(rawValue: defaults.string(forKey: "overlayTextWeight") ?? "") ?? Self.defaultOverlayTextWeight
         overlayFontFamily = defaults.string(forKey: "overlayFontFamily") ?? ""
         overlayTextAlignment = OverlayTextAlignment(rawValue: defaults.string(forKey: "overlayTextAlignment") ?? "") ?? .center
         overlayLineSpacing = OverlayLineSpacing(rawValue: defaults.string(forKey: "overlayLineSpacing") ?? "") ?? .standard

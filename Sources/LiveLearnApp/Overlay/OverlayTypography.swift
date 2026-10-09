@@ -18,42 +18,67 @@ enum OverlayLineSpacing: String, CaseIterable, Identifiable {
 }
 
 enum OverlayAppearancePreset: String, CaseIterable, Identifiable {
-    case clear, paper, kai
+    case plate, clear, paper, kai
     var id: String { rawValue }
-    var label: String { switch self { case .clear: "通透白字"; case .paper: "纸感阅读"; case .kai: "楷体墨字" } }
-    @MainActor var family: String { switch self { case .clear: ""; case .paper: "Songti SC"; case .kai: OverlayTypography.kaiFamily ?? "" } }
+    var label: String { switch self { case .plate: "深色底板"; case .clear: "通透白字"; case .paper: "纸感阅读"; case .kai: "楷体墨字" } }
+    @MainActor var family: String { look.family }
     @MainActor var isAvailable: Bool { self != .kai || OverlayTypography.kaiFamily != nil }
     var note: String { switch self {
+        case .plate: "白色译文、金色原文、深色底板，任何画面上都清楚"
         case .clear: "系统字体、白字、透明背景，适合视频字幕"
         case .paper: "宋体、暖白背景、深色文字，适合长时间阅读"
         case .kai: "楷体、墨色文字、透明背景，适合浅色画面"
     } }
+
+    /// What a preset sets. An empty `sourceHex` lets the source follow the translation.
+    private struct Look {
+        var family = ""
+        var textHex = "FFFFFF"
+        var sourceHex = ""
+        var weight = OverlayTextWeight.semibold
+        var targetSize = 26.0
+        var backgroundHex = AppSettings.defaultOverlayBackgroundHex
+        var opacity = 0.0
+        var lineSpacing = OverlayLineSpacing.standard
+    }
+
+    @MainActor private var look: Look {
+        switch self {
+        case .plate: Look(sourceHex: AppSettings.defaultOverlaySourceHex, opacity: AppSettings.defaultOverlayOpacity)
+        case .clear: Look()
+        case .paper: Look(family: "Songti SC", textHex: "24211D", weight: .regular, targetSize: 28, backgroundHex: "F4F0E8", opacity: 0.96, lineSpacing: .relaxed)
+        case .kai: Look(family: OverlayTypography.kaiFamily ?? "", textHex: "24211D", weight: .regular, targetSize: 28)
+        }
+    }
+
     @MainActor func apply(to settings: AppSettings) {
         guard isAvailable else { return }
-        settings.overlayFontFamily = family
-        settings.overlayTextHex = self == .clear ? "FFFFFF" : "24211D"
-        settings.overlaySourceHex = ""
-        settings.overlayTextWeight = self == .clear ? .medium : .regular
-        settings.captionTargetSize = self == .clear ? 26 : 28
+        let look = self.look
+        settings.overlayFontFamily = look.family
+        settings.overlayTextHex = look.textHex
+        settings.overlaySourceHex = look.sourceHex
+        settings.overlayTextWeight = look.weight
+        settings.captionTargetSize = look.targetSize
         settings.captionSourceSize = 17
-        settings.overlayBackgroundHex = self == .paper ? "F4F0E8" : AppSettings.defaultOverlayBackgroundHex
-        settings.overlayOpacity = self == .paper ? 0.96 : 0
+        settings.overlayBackgroundHex = look.backgroundHex
+        settings.overlayOpacity = look.opacity
         settings.overlayOpaque = false
         settings.overlayContrastMode = .automatic
-        settings.overlayLineSpacing = self == .paper ? .relaxed : .standard
+        settings.overlayLineSpacing = look.lineSpacing
     }
 
     @MainActor func matches(_ settings: AppSettings) -> Bool {
-        isAvailable && settings.overlayFontFamily == family
-            && settings.overlayTextHex == (self == .clear ? "FFFFFF" : "24211D")
-            && settings.overlaySourceHex.isEmpty
-            && settings.overlayTextWeight == (self == .clear ? .medium : .regular)
-            && settings.captionTargetSize == (self == .clear ? 26 : 28)
+        let look = self.look
+        return isAvailable && settings.overlayFontFamily == look.family
+            && settings.overlayTextHex == look.textHex
+            && settings.overlaySourceHex == look.sourceHex
+            && settings.overlayTextWeight == look.weight
+            && settings.captionTargetSize == look.targetSize
             && settings.captionSourceSize == 17
-            && settings.overlayBackgroundHex == (self == .paper ? "F4F0E8" : AppSettings.defaultOverlayBackgroundHex)
-            && settings.overlayOpacity == (self == .paper ? 0.96 : 0)
+            && settings.overlayBackgroundHex == look.backgroundHex
+            && settings.overlayOpacity == look.opacity
             && !settings.overlayOpaque && settings.overlayContrastMode == .automatic
-            && settings.overlayLineSpacing == (self == .paper ? .relaxed : .standard)
+            && settings.overlayLineSpacing == look.lineSpacing
     }
 }
 

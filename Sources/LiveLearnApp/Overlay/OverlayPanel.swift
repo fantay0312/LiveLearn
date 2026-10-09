@@ -15,7 +15,6 @@ final class OverlayLayout {
     var controlsVisible = false
     var isLocked = false
     var isDragging = false
-    var backdropIsBright = false
     static let toolbarHeight: CGFloat = 44
 
     func routesToControls(_ point: CGPoint) -> Bool {
@@ -31,13 +30,15 @@ final class OverlayLayout {
     }
 
     /// Lock protects the caption body; the toolbar remains a reachable way to unlock it.
+    /// Unlocked, the whole block takes a press: that is how the caption is moved.
     func ignoresMouseEvents(fadingOut: Bool) -> Bool {
         fadingOut || (isLocked && !pointerOnToolbar)
     }
 }
 
-/// The toolbar takes a first click without activating the app. Only the caption body drags;
-/// AppKit background dragging is disabled so native sliders and menus keep their gestures.
+/// The toolbar takes a first click without activating the app. The caption body drags from
+/// anywhere on it; AppKit background dragging is disabled so native sliders and menus keep
+/// their gestures.
 final class OverlayHostingView: NSHostingView<AnyView> {
     weak var layout: OverlayLayout?
     var dragWindow: ((NSEvent) -> Void)?
@@ -85,8 +86,6 @@ final class OverlayPanelController {
     private var contentHeight: CGFloat = 120
     private var applyingFrame = false
     private var dragEndTask: Task<Void, Never>?
-    private var contrastTask: Task<Void, Never>?
-    private var backdropTone = CaptionBackdropTone()
     /// True while the panel is fading out (§6: 显示 / 隐藏 是 200ms 的透明度). A show request
     /// during the fade takes the panel back without ordering it out.
     private var fadingOut = false
@@ -132,6 +131,13 @@ final class OverlayPanelController {
         panel.acceptsMouseMovedEvents = true
         panel.becomesKeyOnlyIfNeeded = true
         panel.isReleasedWhenClosed = false
+        // A clear window lets a press on its transparent pixels fall through to the window
+        // below until `ignoresMouseEvents` has been given a value. Left at that default, the
+        // caption could only be dragged by landing on a glyph's stroke, and a miss went to the
+        // video under it. From here the mouse policy alone decides: unlocked takes the press,
+        // locked passes it on.
+        panel.ignoresMouseEvents = true
+        panel.ignoresMouseEvents = false
         self.panel = panel
 
         layout.onHeightChange = { [weak self] height in
@@ -291,27 +297,6 @@ final class OverlayPanelController {
         }
     }
 
-    private func watchBackdrop() {
-        guard contrastTask == nil else { return }
-        contrastTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                guard self != nil else { return }
-                await self?.sampleBackdrop()
-                do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
-            }
-        }
-    }
-
-    private func sampleBackdrop() async {
-        guard let panel, panel.isVisible, !panel.isMiniaturized, !layout.isDragging,
-              model.settings.overlayContrastMode == .automatic, model.settings.overlayOpacity < 0.85 else { return }
-        let frame = panel.frame
-        guard let luminance = await CaptionBackdropSampler.luminance(below: panel),
-              !Task.isCancelled, panel.isVisible, !layout.isDragging, panel.frame == frame else { return }
-        let bright = backdropTone.update(luminance: luminance)
-        if layout.backdropIsBright != bright { layout.backdropIsBright = bright }
-    }
-
     private func disarmGlobalPointerMonitor() {
         if let globalMouseMonitor { NSEvent.removeMonitor(globalMouseMonitor) }
         globalMouseMonitor = nil
@@ -322,7 +307,6 @@ final class OverlayPanelController {
         let wasFading = fadingOut
         fadingOut = false
         armGlobalPointerMonitor()
-        watchBackdrop()
         applyMousePolicy()
         if LLMotion.systemReducesMotion {
             panel.alphaValue = 1
@@ -341,8 +325,6 @@ final class OverlayPanelController {
     private func fadeOut(_ panel: NSPanel) {
         finishDragging()
         disarmGlobalPointerMonitor()
-        contrastTask?.cancel()
-        contrastTask = nil
         if LLMotion.systemReducesMotion {
             panel.orderOut(nil)
             unmountHosting(from: panel)
@@ -549,31 +531,4 @@ final class OverlayPanelController {
     }
 
     func capture(to url: URL) -> Bool { WindowCapture.write(panel, to: url) }
-
-    func captureBackdrop(_ color: NSColor, to url: URL) async -> Bool {
-        guard let panel else { return false }
-        let original = panel.backgroundColor
-        let expectedBright = (color.usingColorSpace(.deviceRGB)?.brightnessComponent ?? 0) > 0.5
-        let backdrop = NSPanel(contentRect: panel.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        backdrop.isReleasedWhenClosed = false
-        backdrop.isFloatingPanel = true
-        backdrop.hidesOnDeactivate = false
-        backdrop.collectionBehavior = panel.collectionBehavior
-        backdrop.backgroundColor = color
-        backdrop.isOpaque = true
-        backdrop.ignoresMouseEvents = true
-        backdrop.level = panel.level
-        backdrop.order(.below, relativeTo: panel.windowNumber)
-        defer { panel.backgroundColor = original; backdrop.close() }
-        panel.backgroundColor = color
-        panel.displayIfNeeded()
-        for _ in 0..<6 {
-            try? await Task.sleep(for: .milliseconds(350))
-            if layout.backdropIsBright == expectedBright { break }
-        }
-        let luminance = await CaptionBackdropSampler.luminance(below: panel)
-        print("backdrop sample: \(luminance ?? -1), bright ink mode: \(layout.backdropIsBright), expected: \(expectedBright)")
-        guard layout.backdropIsBright == expectedBright else { return false }
-        return WindowCapture.write(panel, to: url)
-    }
 }

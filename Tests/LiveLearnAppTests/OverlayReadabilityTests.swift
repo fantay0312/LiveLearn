@@ -19,23 +19,80 @@ struct OverlayReadabilityTests {
         }
     }
 
-    @Test func presetsAreExplicitAndReadablePaperNeedsNoHalo() {
+    @Test func presetsAreExplicitAndAPlateThatCarriesTheInkNeedsNoEdge() {
         withSettings { settings, defaults in
+            // A fresh caption wears the default look, which is the first preset.
+            #expect(OverlayAppearancePreset.plate.matches(settings))
+            #expect(settings.overlayTextHex == "FFFFFF" && settings.overlaySourceHex == "F3D58C" && settings.overlayTextWeight == .semibold)
+            var style = OverlayStyle.resolve(settings, forceOpaque: false)
+            #expect(style.opacity == AppSettings.defaultOverlayOpacity)
+            for plain in [style.renderer(size: 26), style.renderer(source: true, size: 17)] {
+                #expect(plain.edges.isEmpty && plain.haloHex == nil && plain.lineOpacity == 1)
+            }
+            // What stands off the plate is edged however dark the plate is.
+            #expect(style.renderer(size: 11, onPlate: false).edges.count == 1)
             settings.overlayTextHex = "334455"
             #expect(AppSettings(defaults: defaults).overlayTextHex == "334455")
+            #expect(!OverlayAppearancePreset.allCases.contains { $0.matches(settings) })
             OverlayAppearancePreset.paper.apply(to: settings)
-            let style = OverlayStyle.resolve(settings, forceOpaque: false)
+            style = OverlayStyle.resolve(settings, forceOpaque: false)
             #expect(style.opacity == 0.96)
-            #expect(style.renderer(size: 28).shadowHex == nil)
+            #expect(style.renderer(size: 28).haloHex == nil && style.renderer(size: 28).edges.isEmpty)
             #expect(settings.overlayFontFamily == "Songti SC")
             #expect(settings.overlayLineSpacing == .relaxed)
             OverlayAppearancePreset.clear.apply(to: settings)
-            #expect(settings.overlayOpacity == 0 && settings.overlayTextHex == "FFFFFF")
+            #expect(settings.overlayOpacity == 0 && settings.overlayTextHex == "FFFFFF" && settings.overlaySourceHex.isEmpty)
             #expect(settings.overlayFontFamily.isEmpty)
+            // No plate: a thin contour and a short shadow of the opposite tone, never a glow.
             let renderer = OverlayStyle.resolve(settings, forceOpaque: false).renderer(size: 26)
-            #expect(renderer.shadowRadius <= 2.2 && renderer.shadowOpacity <= 0.9)
-            #expect(renderer.edges.isEmpty)
+            #expect(renderer.haloHex == 0 && renderer.halos.count == 1)
+            #expect(renderer.halos.allSatisfy { $0.radius <= 2.5 && $0.opacity <= 0.5 })
+            #expect(renderer.edges.count == 1 && renderer.edges[0].hex == 0 && renderer.edges[0].width < 1 && renderer.edges[0].opacity < 1)
+            // A soft plate does not carry white ink over a white frame on its own.
+            settings.overlayOpacity = 0.45
+            #expect(!OverlayStyle.resolve(settings, forceOpaque: false).renderer(size: 26).edges.isEmpty)
+            OverlayAppearancePreset.plate.apply(to: settings)
+            #expect(OverlayAppearancePreset.plate.matches(settings) && !OverlayAppearancePreset.clear.matches(settings))
         }
+    }
+
+    @Test func theSourceFollowsTheTranslationAsASolidTintUnlessItHasItsOwnColour() {
+        withSettings { settings, _ in
+            var style = OverlayStyle.resolve(settings, forceOpaque: false)
+            #expect(HexColor.hex(from: style.source) == "F3D58C")
+            settings.overlaySourceHex = ""
+            style = OverlayStyle.resolve(settings, forceOpaque: false)
+            #expect(HexColor.hex(from: style.source) == "C2C2C2" && HexColor.hex(from: style.label) == "A8A8A8")
+            #expect(NSColor(style.source).alphaComponent == 1 && NSColor(style.label).alphaComponent == 1)
+            settings.overlayTextHex = "000000"
+            style = OverlayStyle.resolve(settings, forceOpaque: false)
+            #expect(HexColor.hex(from: style.source) == "3D3D3D")
+            #expect(HexColor.hex(from: OverlayStyle.resolve(settings, forceOpaque: false, increasedContrast: true).source) == "000000")
+        }
+    }
+
+    @Test func captionsStillWearingThePreviousDefaultTakeTheCurrentLookOnceAndStyledOnesStay() {
+        func settings(_ saved: [String: Any]) -> AppSettings {
+            let suite = "LiveLearn.testing.caption-look.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suite)!
+            defaults.removePersistentDomain(forName: suite)
+            for (key, value) in saved { defaults.set(value, forKey: key) }
+            let settings = AppSettings(defaults: defaults)
+            defaults.removePersistentDomain(forName: suite)
+            return settings
+        }
+        // Reset to the look that used to ship: explicit values, all of them the old defaults.
+        let reset = settings(["overlayOpacity": 0.0, "overlayTextHex": "F4F0E8", "overlaySourceHex": "", "overlayTextWeight": "medium", "captionTargetSize": 30.0])
+        #expect(reset.overlayOpacity == AppSettings.defaultOverlayOpacity && reset.overlayTextHex == "FFFFFF")
+        #expect(reset.overlaySourceHex == "F3D58C" && reset.overlayTextWeight == .semibold && reset.captionTargetSize == 30)
+        // A style the user made, or a preset they chose, is theirs.
+        let custom = settings(["overlayOpacity": 0.0, "overlayTextHex": "FFCC00"])
+        #expect(custom.overlayOpacity == 0 && custom.overlayTextHex == "FFCC00")
+        let clear = settings(["overlayOpacity": 0.0, "overlayTextHex": "FFFFFF", "overlaySourceHex": "", "overlayTextWeight": "medium"])
+        #expect(clear.overlayOpacity == 0 && clear.overlaySourceHex.isEmpty && clear.overlayTextWeight == .medium)
+        // Only once: clearing the plate afterwards sticks.
+        let later = settings(["captionLook": 2, "overlayOpacity": 0.0, "overlayTextHex": "F4F0E8"])
+        #expect(later.overlayOpacity == 0 && later.overlayTextHex == "F4F0E8")
     }
 
     @Test func previewUsesActualSavedWidthWithSafeBounds() {
@@ -52,17 +109,18 @@ struct OverlayReadabilityTests {
         try body(AppSettings(defaults: defaults), defaults)
     }
 
-    @Test func automaticContrastKeepsSolidTextWithoutOutlining() {
+    @Test func automaticContrastEdgesAClearCaptionInTheToneOppositeEachInk() {
         withSettings { settings, _ in
+            settings.overlayOpacity = 0
             settings.overlayTextHex = "000000"
             settings.overlaySourceHex = "FFFFFF"
             let style = OverlayStyle.resolve(settings, forceOpaque: false)
             #expect(style.opacity == 0)
             #expect(HexColor.hex(from: style.text) == "000000")
             #expect(HexColor.hex(from: style.source) == "FFFFFF")
-            #expect(style.renderer(size: 26).edges.isEmpty)
-            #expect(style.renderer(size: 26).shadowHex == 0xFFFFFF)
-            #expect(style.renderer(source: true, size: 17).shadowHex == 0)
+            #expect(style.renderer(size: 26).edges.map(\.hex) == [0xFFFFFF])
+            #expect(style.renderer(size: 26).haloHex == 0xFFFFFF)
+            #expect(style.renderer(source: true, size: 17).haloHex == 0)
             // Mid-grey must choose black by measured contrast, not an arbitrary 0.4 threshold.
             #expect(CaptionTextRenderer.contrastingHex("808080") == 0)
             #expect(CaptionTextRenderer.contrastingHex("000000") == 0xFFFFFF)
@@ -87,7 +145,7 @@ struct OverlayReadabilityTests {
             #expect(renderer.edges == [.init(hex: 0xFFFFFF, width: 2.25)])
             restored.resetOverlayStyle()
             #expect(restored.overlayFontFamily.isEmpty && restored.overlayContrastMode == .automatic)
-            #expect(restored.overlayOutlineWidth == 0 && restored.overlaySourceHex.isEmpty)
+            #expect(restored.overlayOutlineWidth == 0 && restored.overlaySourceHex == AppSettings.defaultOverlaySourceHex)
         }
     }
 

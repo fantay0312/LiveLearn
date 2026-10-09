@@ -7,50 +7,69 @@ import CaptionDomain
 
 @MainActor
 struct CaptionTextHierarchyTests {
-    @Test func brightBackgroundUsesSolidDarkInkInsteadOfHollowWhiteOutlines() throws {
-        func bitmap(_ renderer: CaptionTextRenderer, inkAlpha: Double) throws -> NSBitmapImageRep {
-            let view = Text("上一句与原文 Previous sentence")
-                .font(.system(size: 17, weight: .medium)).foregroundStyle(Color.white.opacity(inkAlpha))
-                .textRenderer(renderer).frame(width: 360, height: 60).background(Color.white)
-            let image = ImageRenderer(content: view)
-            image.scale = 2
-            return NSBitmapImageRep(cgImage: try #require(image.cgImage))
+    /// Pixels a light-ink line darkens on a white frame: the edge that makes it readable there.
+    private func darkPixels(_ renderer: CaptionTextRenderer, ink: Color, size: Double) throws -> Int {
+        let image = ImageRenderer(content: Text("上一句与原文 Previous sentence")
+            .font(.system(size: size, weight: .medium)).foregroundStyle(ink)
+            .textRenderer(renderer).frame(width: 520, height: 80).background(Color.white))
+        image.scale = 2
+        let bitmap = NSBitmapImageRep(cgImage: try #require(image.cgImage))
+        var count = 0
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<bitmap.pixelsWide {
+                if let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.redComponent < 0.7 { count += 1 }
+            }
         }
-        let old = try bitmap(.init(edges: [], shadowHex: 0, shadowRadius: 0.8, shadowOpacity: 0.68), inkAlpha: 0.48)
-        let suite = "LiveLearn.testing.adaptive-contrast.\(UUID())"
+        return count
+    }
+
+    @Test func theInkIsTheUsersOnEveryFrameAndItsEdgeCarriesAClearCaptionOverBrightOnes() throws {
+        let suite = "LiveLearn.testing.constant-ink.\(UUID())"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
-        let bright = OverlayStyle.resolve(settings, forceOpaque: false, backdropIsBright: true)
-        let dark = OverlayStyle.resolve(settings, forceOpaque: false, backdropIsBright: false)
-        #expect(HexColor.hex(from: bright.text) == "202124")
-        #expect(HexColor.hex(from: dark.text) == settings.overlayTextHex)
-        #expect(bright.opacity == dark.opacity && bright.renderer(size: 17).edges.isEmpty)
-        let image = ImageRenderer(content: Text("上一句与原文 Previous sentence")
-            .font(.system(size: 17, weight: .medium)).foregroundStyle(bright.text)
-            .textRenderer(bright.renderer(size: 17, emphasis: 0.48))
-            .frame(width: 360, height: 60).background(Color.white))
-        image.scale = 2
-        let protected = NSBitmapImageRep(cgImage: try #require(image.cgImage))
-        func darkPixels(_ bitmap: NSBitmapImageRep) -> Int {
-            var count = 0
-            for y in 0..<bitmap.pixelsHigh {
-                for x in 0..<bitmap.pixelsWide {
-                    if let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.redComponent < 0.65 { count += 1 }
-                }
-            }
-            return count
-        }
-        #expect(darkPixels(protected) > darkPixels(old) + 800)
-        let renderer = CaptionTextRenderer.automatic(hex: "FFFFFF", size: 17, emphasis: 0.48)
-        #expect(renderer.foregroundOpacity == 0.48 && renderer.edges.isEmpty)
+        settings.overlayOpacity = 0
+        let style = OverlayStyle.resolve(settings, forceOpaque: false)
+        #expect(HexColor.hex(from: style.text) == settings.overlayTextHex)
+        #expect(style.opacity == 0 && style.renderer(size: 26).haloHex == 0)
+        // White ink on a white frame with no plate is the worst case; even the quietest context
+        // line (60 %) keeps a dark edge there, where a single faint shadow left next to none.
+        let faint = CaptionTextRenderer(edges: [], haloHex: 0, halos: [.init(radius: 0.8, opacity: 0.45, y: 1)], lineOpacity: 0.6)
+        let before = try darkPixels(faint, ink: style.text, size: 17)
+        let quiet = try darkPixels(style.renderer(size: 17, emphasis: 0.6), ink: style.text, size: 17)
+        let current = try darkPixels(style.renderer(size: 26), ink: style.text, size: 26)
+        #expect(quiet > 1_000 && before < quiet / 10)
+        #expect(current > quiet)
+        // Dark ink gets the opposite halo; emphasis fades the line as a whole, never its geometry.
+        settings.overlayTextHex = "24211D"
+        let ink = OverlayStyle.resolve(settings, forceOpaque: false).renderer(size: 26, emphasis: 0.48)
+        #expect(ink.haloHex == 0xFFFFFF && ink.lineOpacity == 0.76 && ink.edges.map(\.hex) == [0xFFFFFF])
+        #expect(ink.halos == CaptionTextRenderer.automatic(hex: "24211D", size: 26).halos)
     }
 
-    @Test func backdropToneIgnoresFlashesAndHoldsItsStateAroundTheThreshold() {
-        var tone = CaptionBackdropTone()
-        let values = [0.9, 0.2, 0.9, 0.9, 0.5, 0.55, 0.6, 0.65, 0.2, 0.2, .nan]
-        let observed = values.map { tone.update(luminance: $0) }
-        #expect(observed == [false, false, false, true, true, true, true, true, true, false, false])
+    @Test func anUnlockedCaptionShowsAPlateUnderThePointerAndKeepsTheUsersOwn() throws {
+        let suite = "LiveLearn.testing.caption-plate.\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        // The default plate is its own handle: nothing changes under the pointer.
+        #expect(OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: true) == OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: false))
+        settings.overlayOpacity = 0
+        func plate(_ grabbable: Bool) throws -> NSColor {
+            try #require(NSColor(OverlayStyle.resolve(settings, forceOpaque: false).plate(grabbable: grabbable)).usingColorSpace(.sRGB))
+        }
+        #expect(try plate(false).alphaComponent == 0)
+        var held = try plate(true)
+        #expect(abs(held.alphaComponent - OverlayStyle.grabOpacity) < 0.01 && held.redComponent < 0.01)
+        settings.overlayTextHex = "24211D"
+        held = try plate(true)
+        #expect(abs(held.alphaComponent - OverlayStyle.grabOpacity) < 0.01 && held.redComponent > 0.99)
+        settings.overlayBackgroundHex = "F4F0E8"
+        settings.overlayOpacity = 0.1
+        held = try plate(true)
+        #expect(abs(held.alphaComponent - OverlayStyle.grabOpacity) < 0.01 && HexColor.hex(from: Color(nsColor: held.withAlphaComponent(1))) == "F4F0E8")
+        settings.overlayOpacity = 0.6
+        #expect(try abs(plate(true).alphaComponent - 0.6) < 0.01 && plate(true) == plate(false))
     }
 
     @Test func automaticContrastKeepsRequestedHierarchyAndOnlyAccessibilityRaisesIt() {
@@ -63,7 +82,7 @@ struct CaptionTextHierarchyTests {
         #expect(ordinary.secondaryOpacity(0.68) == 0.68)
         let accessible = OverlayStyle.resolve(settings, forceOpaque: true, increasedContrast: true)
         #expect(accessible.opacity == 1 && accessible.secondaryOpacity(0.48) >= 0.8)
-        #expect(ordinary.opacity == 0)
+        #expect(ordinary.opacity == AppSettings.defaultOverlayOpacity)
     }
 
     @Test func ReadingSlotsKeepCurrentLineStillAsHistoryAndIncomingAppear() throws {

@@ -26,13 +26,15 @@ struct OverlayView: View {
 
     private var style: OverlayStyle {
         OverlayStyle.resolve(model.settings, forceOpaque: reduceTransparency || model.settings.overlayOpaque,
-                             increasedContrast: contrast == .increased, backdropIsBright: layout?.backdropIsBright == true)
+                             increasedContrast: contrast == .increased)
     }
 
     private var width: CGFloat? { forcedWidth ?? layout?.width }
     private var controlsVisible: Bool { (layout?.controlsVisible ?? revealed) || openControl != nil || toolbarFocused || previewControls }
     private var pointerInside: Bool { layout?.pointerInside ?? hoverInside }
     private var shouldAutoHide: Bool { !(layout?.pointerOnToolbar ?? hoverInside) && !toolbarFocused && openControl == nil && !previewControls }
+    /// Unlocked and under the pointer (or in the hand): each lane shows the plate it is moved by.
+    private var grabbable: Bool { !model.overlayLocked && (pointerInside || layout?.isDragging == true) }
 
     var body: some View {
         let style = self.style
@@ -50,13 +52,7 @@ struct OverlayView: View {
                 .contentShape(Rectangle())
                 .onHover { if $0 { revealControls() } }
             block(style)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 14)
                 .frame(maxWidth: .infinity)
-                .background {
-                    RoundedRectangle(cornerRadius: LLMetrics.Radius.overlay, style: .continuous)
-                        .fill(style.background.opacity(style.opacity))
-                }
         }
         .frame(width: width)
         .frame(maxWidth: width == nil ? LLMetrics.overlayMaxWidth : nil)
@@ -103,7 +99,6 @@ struct OverlayView: View {
             ForEach(OverlayContrastMode.allCases) { Text($0.label).tag($0) }
         }
         Toggle("显示原文", isOn: $settings.showSourceInOverlay)
-            .disabled(settings.captionPresentation == .singleLine)
         Toggle("显示上一句", isOn: $settings.showPreviousLine)
             .disabled(settings.captionPresentation == .singleLine)
         Toggle("显示呼吸线", isOn: $settings.showBreathLine)
@@ -126,17 +121,18 @@ struct OverlayView: View {
         let lanes = model.settings.captionPresentation == .singleLine
             ? SingleLineCaptionContent.lane(from: model.lanes, tails: model.laneTails).map { [$0] } ?? []
             : model.lanes
-        return VStack(alignment: .center, spacing: 20) {
+        return VStack(alignment: .center, spacing: 8) {
             if lanes.isEmpty {
                 LaneBlock(lane: nil, current: nil, previous: nil, settings: model.settings,
-                          style: style, statusText: model.statusText, showsLabel: false, readingWidth: width)
+                          style: style, statusText: model.statusText, showsLabel: false, readingWidth: width,
+                          grabbable: grabbable)
             } else {
                 ForEach(lanes) { lane in
                     let tail = model.laneTails[lane.id]
                     LaneBlock(lane: lane, current: tail?.current, previous: tail?.previous,
                               settings: model.settings, style: style,
                               statusText: laneStatus(lane, tail: tail), showsLabel: model.lanes.count > 1,
-                              earlier: tail?.earlier, readingWidth: width)
+                              earlier: tail?.earlier, readingWidth: width, grabbable: grabbable)
                 }
             }
         }
